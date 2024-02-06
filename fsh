@@ -9,14 +9,20 @@ fsh() {
     echo "$choices" | GREP_COLORS='ms=01;92' grep -i --color=always "$filter"
   }
 
-  handle_key() {
+  read_key() {
+    # not POSIX
     read -rsn1 key </dev/tty >&2
+  }
+
+  handle_key() {
+    read_key
     case "$key" in
       ' ') filter="$filter " ;;
       '') 
         result=$(echo "$choices" | grep -i "$filter" | tail -1 | head -1 | remove_ansi_escape_codes)
         running=false
         ;;
+      # not POSIX
       $'\x7f') filter="${filter%?}" ;;
       *) filter="$filter$key" ;;
     esac
