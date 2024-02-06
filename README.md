@@ -1,9 +1,14 @@
+minimalist selector in shell, inspired by fzf
+
 ![screenshot](doc/screenshot.png)
 
-mininmalist selector in shell, inspired by fzf
+## what's it for ?
+
+You need to select between several choices in a shell script with minimal dependencies ?
+
+Just copy / paste the fsh function in your script.
 
 ## usage
-
 
 Example:
 
@@ -41,3 +46,8 @@ Hallo, Welt!
 ```
 
 </details>
+
+## limitations
+
+- for now, it is not POSIX shell.
+- no fuzzy finding for now, use grep pattern instead
