@@ -8,12 +8,12 @@ fsh() {
   choices=$(cat)
   filter=""
   result=""
-  echo -e "\e[?1049h"
+  printf "\e[?1049h"
   while true
   do
     clear >&2
     echo "$choices" | grep -i --color=always "$filter" >&2
-    echo -en "\n> $filter" >&2
+    printf "\n> %s" "$filter" >&2
     read -rsn1 key </dev/tty >&2
     case "$key" in
       ' ') filter="$filter " ;;
@@ -25,7 +25,7 @@ fsh() {
       *) filter="$filter$key" ;;
     esac
   done
-  echo -e "\e[?1049l"
+  printf "\e[?1049l"
   echo "$result"
 }
 

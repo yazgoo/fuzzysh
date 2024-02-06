@@ -1,2 +1,3 @@
 # fuzzysh
-fuzzy finder in shell
+
+mininmalist fuzzy finder in shell
