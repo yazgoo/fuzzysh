@@ -1,8 +1,6 @@
-# fuzzysh
-
-mininmalist fuzzy finder in shell
-
 ![screenshot](doc/screenshot.png)
+
+mininmalist selector in shell, inspired by fzf
 
 ## usage
 
