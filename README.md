@@ -2,7 +2,7 @@
 
 mininmalist fuzzy finder in shell
 
-![screenshot](screenshot.png)
+![screenshot](doc/screenshot.png)
 
 ## usage
 
