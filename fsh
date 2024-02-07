@@ -98,8 +98,9 @@ fsh() {
   }
 
   do_clear() {
-    move_cursor_to $start_line 0
-    print_text | sed 's/./  /g' >&2
+    # move_cursor_to $start_line 0
+    # print_text | sed 's/./  /g' >&2
+    clear >&2
   }
 
   run() {
@@ -109,7 +110,6 @@ fsh() {
       draw
       draw_frame
       handle_key
-      do_clear
     done
   }
 
