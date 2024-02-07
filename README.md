@@ -1,6 +1,6 @@
 minimalist selector in shell, inspired by fzf
 
-![screenshot](doc/animation.gif)
+![screenshot](doc/animation_small.gif)
 
 ## what's it for ?
 
