@@ -18,7 +18,7 @@ fsh() {
 
   read_key() {
     # not POSIX
-    read -rsn1 key </dev/tty >&2
+    IFS= read -rsn1 key </dev/tty >&2
   }
 
   handle_key() {
@@ -107,7 +107,9 @@ fsh() {
     setup_theme
     header=""
     [ -n "$1" ] && header=" $1"
-    choices=$(cat)
+    if read -t 0; then
+      choices=$(cat)
+    fi
     total_n_choices=$(echo "$choices" | wc -l)
     filter=""
     result=""
