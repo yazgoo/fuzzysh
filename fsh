@@ -1,12 +1,19 @@
 #!/bin/env sh
 
 fsh() {
+
+  setup_theme() {
+    grep_colors='ms=01;92'
+    frame_color=30
+    prompt_color=34
+  }
+
   remove_ansi_escape_codes() {
     sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 
   }
 
   get_new_choices() {
-    echo "$choices" | GREP_COLORS='ms=01;92' grep -i --color=always "$filter"
+    echo "$choices" | GREP_COLORS="$grep_colors" grep -i --color=always "$filter"
   }
 
   read_key() {
@@ -50,10 +57,19 @@ fsh() {
     printf "\e[0m"
   }
 
+  draw_line() {
+    (
+    move_cursor_to "$((LINES - 2))" 0
+    start_color "$frame_color"
+    printf "  %s  " "$(printf '─%.0s' $(seq 1 $((COLUMNS - 4))))"
+    end_color
+    ) >&2
+  }
+
   draw_frame() {
     (
     move_cursor_to 0 0
-    start_color 30
+    start_color "$frame_color"
     printf "┌%s┐" "$(printf '─%.0s' $(seq 1 $((COLUMNS - 2))))"
     for i in $(seq 2 $((LINES - 1)))
     do
@@ -71,10 +87,8 @@ fsh() {
   print_text() {
     (
     printf "\n%s\n" "$new_choices" | tac -b
-    start_color 30
-    printf "\n%d/%d" "$n_choices" "$total_n_choices"
-    end_color
-    printf "\n> %s" "$filter"
+    printf "\n%s%d/%d%s%s " "$(start_color "$frame_color")" "$n_choices" "$total_n_choices" "$(end_color)" "$header"
+    printf "\n%s>%s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" 
     ) | sed 's/^/  /' 
   }
 
@@ -90,6 +104,9 @@ fsh() {
   }
 
   init() {
+    setup_theme
+    header=""
+    [ -n "$1" ] && header=" $1"
     choices=$(cat)
     total_n_choices=$(echo "$choices" | wc -l)
     filter=""
@@ -107,21 +124,23 @@ fsh() {
     clear >&2
     while $running
     do
+      draw_line
       draw
       draw_frame
       handle_key
+      do_clear
     done
   }
 
   main() {
-    init
+    init "$@"
     smcup
     run
     rmcup
     echo "$result"
   }
 
-  main
+  main "$@"
 }
 
-fsh "@$"
+fsh "$@"
