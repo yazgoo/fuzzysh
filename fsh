@@ -74,16 +74,13 @@ fsh() {
   }
 
   draw_line() {
-    (
     move_cursor_to "$((LINES - 2))" 0
     start_color "$frame_color"
     printf "  %s  " "$(printf '─%.0s' $(seq 1 $((COLUMNS - 4))))"
     end_color
-    ) >&2
   }
 
   draw_frame() {
-    (
     move_cursor_to 0 0
     start_color "$frame_color"
     printf "┌%s┐" "$(printf '─%.0s' $(seq 1 $((COLUMNS - 2))))"
@@ -97,7 +94,6 @@ fsh() {
     move_cursor_to $LINES 0
     printf "└%s┘" "$(printf '─%.0s' $(seq 1 $((COLUMNS - 2))))"
     end_color
-    ) >&2
   }
   
   print_text() {
@@ -115,15 +111,13 @@ fsh() {
     ) | sed 's/^/  /' 
   }
 
-  draw() {
+  draw_text() {
     new_choices=$(get_new_choices)
     n_choices=$(echo "$new_choices" | wc -l)
     start_line=$(( LINES -  n_choices - 4))
     # goto start_line
-    (
     move_cursor_to $((start_line + 1)) 0
     print_text
-    ) >&2
   }
 
   init() {
@@ -143,19 +137,23 @@ fsh() {
   }
 
   do_clear() {
-    move_cursor_to $start_line 0 >&2
-    print_text | sed 's/./  /g' >&2
+    move_cursor_to $((start_line + 1)) 0
+    print_text | remove_ansi_escape_codes | sed 's/./ /g'
+  }
+
+  draw() {
+    draw_line
+    draw_text
+    draw_frame
   }
 
   run() {
     clear >&2
     while $running
     do
-      do_clear
-      draw_line
-      draw
-      draw_frame
-      handle_key 2>/dev/null 1>&2
+      draw >&2
+      handle_key >/dev/null 2>&1
+      do_clear >&2
     done
   }
 
