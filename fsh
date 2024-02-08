@@ -3,9 +3,11 @@
 fsh() {
 
   setup_theme() {
+    selector_color=40
     grep_colors='ms=01;92'
     frame_color=30
     prompt_color=34
+    select_color=31
   }
 
   remove_ansi_escape_codes() {
@@ -18,20 +20,32 @@ fsh() {
 
   read_key() {
     # not POSIX
-    IFS= read -rsn1 key </dev/tty >&2
+    IFS= read -rsn1 "$1" </dev/tty >&2
   }
 
   handle_key() {
-    read_key
+    read_key key
     case "$key" in
       ' ') filter="$filter " ;;
+      $'\x1b') 
+        read_key key3
+        # arrows
+        read_key key2
+        case "$key2" in
+          'A') [ "$item_n" -lt "$((n_choices - 1))" ] && item_n=$((item_n + 1)) ;;
+          'B') [ "$item_n" -gt 0 ] && item_n=$((item_n - 1)) ;;
+          *) ;;
+        esac
+        # flush stdin
+        read -rsn5 -t 0.1
+        ;;
       '') 
-        result=$(echo "$choices" | grep -i "$filter" | tail -1 | head -1 | remove_ansi_escape_codes)
+        result=$(echo "$new_choices" | head "-$((item_n + 1))" | tail -1 | remove_ansi_escape_codes)
         running=false
         ;;
       # not POSIX
       $'\x7f') filter="${filter%?}" ;;
-      *) filter="$filter$key" ;;
+      *) filter="${filter}${key}" ;;
     esac
   }
 
@@ -86,7 +100,14 @@ fsh() {
   
   print_text() {
     (
-    printf "\n%s\n" "$new_choices" | tac -b
+    i="$((n_choices - 1))"
+    echo "$new_choices" | tac | while read -r choice
+    do
+      cursor=" "$(end_color)
+      [ $i -eq $item_n ] && cursor=$(printf "%s>%s%s" "$(start_color "$select_color")" "$(end_color)" "$(start_color "$selector_color")")
+      printf "\n%s%s %s %s" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" 
+      i=$((i - 1))
+    done
     printf "\n%s%d/%d%s%s " "$(start_color "$frame_color")" "$n_choices" "$total_n_choices" "$(end_color)" "$header"
     printf "\n%s>%s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" 
     ) | sed 's/^/  /' 
@@ -109,11 +130,14 @@ fsh() {
     [ -n "$1" ] && header=" $1"
     if read -t 0; then
       choices=$(cat)
+    else
+      choices=$(find . -not -path '*/.*' | sed 's,^./,,')
     fi
     total_n_choices=$(echo "$choices" | wc -l)
     filter=""
     result=""
     running=true
+    item_n=0
   }
 
   do_clear() {
