@@ -162,7 +162,11 @@ fsh() {
     smcup
     run
     rmcup
-    echo "$result"
+    if [ -n "$result" ]; then
+      echo "$result"
+    else
+      false
+    fi
   }
 
   main "$@"
