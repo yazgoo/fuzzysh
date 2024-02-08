@@ -50,6 +50,7 @@ fsh() {
   }
 
   smcup() {
+    stty -echo
     printf "\e[?1049h"
     printf "\e[?25l"
   }
@@ -57,6 +58,7 @@ fsh() {
   rmcup() {
     printf "\e[?1049l"
     printf "\e[?25h"
+    stty echo
   }
 
   move_cursor_to() {
@@ -119,7 +121,7 @@ fsh() {
     start_line=$(( LINES -  n_choices - 4))
     # goto start_line
     (
-    move_cursor_to $start_line 0
+    move_cursor_to $((start_line + 1)) 0
     print_text
     ) >&2
   }
@@ -141,20 +143,19 @@ fsh() {
   }
 
   do_clear() {
-    # move_cursor_to $start_line 0
-    # print_text | sed 's/./  /g' >&2
-    clear >&2
+    move_cursor_to $start_line 0 >&2
+    print_text | sed 's/./  /g' >&2
   }
 
   run() {
     clear >&2
     while $running
     do
+      do_clear
       draw_line
       draw
       draw_frame
-      handle_key
-      do_clear
+      handle_key 2>/dev/null 1>&2
     done
   }
 
