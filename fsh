@@ -73,13 +73,6 @@ fsh() {
     printf "\e[0m"
   }
 
-  draw_line() {
-    move_cursor_to "$((LINES - 2))" 0
-    start_color "$frame_color"
-    printf "  %s  " "$(printf '─%.0s' $(seq 1 $((COLUMNS - 4))))"
-    end_color
-  }
-
   draw_frame() {
     move_cursor_to 0 0
     start_color "$frame_color"
@@ -103,11 +96,12 @@ fsh() {
     do
       cursor=" "$(end_color)
       [ $i -eq $item_n ] && cursor=$(printf "%s>%s%s" "$(start_color "$select_color")" "$(end_color)" "$(start_color "$selector_color")")
-      printf "\n%s%s %s %s" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" 
+      printf "\n%s%s %s %s%s" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" "$(printf " %.0s" $(seq 1 $((COLUMNS - 5 - ${#choice}))))"
       i=$((i - 1))
     done
-    printf "\n%s%d/%d%s%s " "$(start_color "$frame_color")" "$n_choices" "$total_n_choices" "$(end_color)" "$header"
-    printf "\n%s>%s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" 
+    choices_quota=$(printf "%d/%d" "$n_choices" "$total_n_choices")
+    printf "\n%s%s%s%s %s%s%s" "$(start_color "$frame_color")" "$choices_quota" "$(end_color)" "$header" $(start_color "$frame_color") "$(printf "─%.0s" $(seq 1 $((COLUMNS - 5 - ${#header} - ${#choices_quota}))))" "$(end_color)"
+    printf "\n%s>%s %s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" "$(printf " %.0s" $(seq 1 $((COLUMNS - 5 - ${#filter}))))"
     ) | sed 's/^/  /' 
   }
 
@@ -116,7 +110,11 @@ fsh() {
     n_choices=$(echo "$new_choices" | wc -l)
     start_line=$(( LINES -  n_choices - 4))
     # goto start_line
-    move_cursor_to $((start_line + 1)) 0
+    for i in $(seq 1 $((start_line + 1)))
+    do
+      move_cursor_to "$i" 0
+      printf " %0.s" $(seq 1 $((COLUMNS - 5)))
+    done
     s=$(print_text)
     printf "%s" "$s"
   }
@@ -137,13 +135,7 @@ fsh() {
     item_n=0
   }
 
-  do_clear() {
-    move_cursor_to $((start_line + 1)) 0
-    print_text | remove_ansi_escape_codes | sed 's/./ /g'
-  }
-
   draw() {
-    draw_line
     draw_text
     draw_frame
   }
@@ -153,9 +145,7 @@ fsh() {
     while $running
     do
       draw >&2
-      to_clear=$(do_clear)
       handle_key >/dev/null 2>&1
-      printf "%s" "$to_clear" >&2
     done
   }
 
