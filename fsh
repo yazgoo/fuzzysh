@@ -117,7 +117,8 @@ fsh() {
     start_line=$(( LINES -  n_choices - 4))
     # goto start_line
     move_cursor_to $((start_line + 1)) 0
-    print_text
+    s=$(print_text)
+    printf "%s" "$s"
   }
 
   init() {
@@ -152,8 +153,9 @@ fsh() {
     while $running
     do
       draw >&2
+      to_clear=$(do_clear)
       handle_key >/dev/null 2>&1
-      do_clear >&2
+      printf "%s" "$to_clear" >&2
     done
   }
 
