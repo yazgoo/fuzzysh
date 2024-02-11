@@ -3,11 +3,11 @@
 fsh() {
 
   setup_theme() {
-    selector_color=40
-    grep_colors='ms=01;92'
-    frame_color=30
-    prompt_color=34
-    select_color=31
+    selector_color=${FSH_SELECTOR_COLOR:=40}
+    grep_colors=${FSH_GREP_COLORS:='ms=01;92'}
+    frame_color=${FSH_FRAME_COLOR:=30}
+    prompt_color=${FSH_PROMPT_COLOR:=34}
+    select_color=${FSH_SELECT_COLOR:=31}
   }
 
   remove_ansi_escape_codes() {
@@ -99,17 +99,18 @@ fsh() {
       printf "\n%s%s %s %s%s" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" "$(printf " %.0s" $(seq 1 $((COLUMNS - 5 - ${#choice}))))"
       i=$((i - 1))
     done
-    choices_quota=$(printf "%d/%d" "$n_choices" "$total_n_choices")
+    display_n_choice="$n_choices"
+    [ "$new_choices" = "" ] && display_n_choice=0
+    choices_quota=$(printf "%d/%d" "$display_n_choice" "$total_n_choices")
     printf "\n%s%s%s%s %s%s%s" "$(start_color "$frame_color")" "$choices_quota" "$(end_color)" "$header" $(start_color "$frame_color") "$(printf "─%.0s" $(seq 1 $((COLUMNS - 5 - ${#header} - ${#choices_quota}))))" "$(end_color)"
     printf "\n%s>%s %s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" "$(printf " %.0s" $(seq 1 $((COLUMNS - 5 - ${#filter}))))"
     ) | sed 's/^/  /' 
   }
 
-  draw_text() {
+  draw_frame_content() {
     new_choices=$(get_new_choices)
     n_choices=$(echo "$new_choices" | wc -l)
     start_line=$(( LINES -  n_choices - 4))
-    # goto start_line
     for i in $(seq 1 $((start_line + 1)))
     do
       move_cursor_to "$i" 0
@@ -136,7 +137,7 @@ fsh() {
   }
 
   draw() {
-    draw_text
+    draw_frame_content
     draw_frame
   }
 
