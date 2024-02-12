@@ -49,5 +49,6 @@ Hallo, Welt!
 
 ## limitations
 
-- for now, it is not POSIX shell.
-- no fuzzy finding for now, use grep pattern instead
+- for now, it is not POSIX shell, it's only tested in zsh and bash.
+- no fuzzy finding, use grep pattern instead by design.
+  You can use `.*` in your query if you want to do something like fuzzy finding.

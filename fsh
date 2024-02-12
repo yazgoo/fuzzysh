@@ -1,6 +1,7 @@
 #!/bin/env sh
 
 fsh() {
+  # https://github.com/yazgoo/fuzzysh/
 
   setup_theme() {
     selector_color=${FSH_SELECTOR_COLOR:=40}
@@ -20,7 +21,12 @@ fsh() {
 
   read_key() {
     # not POSIX
-    IFS= read -rsn1 "$1" </dev/tty >&2
+    if [ "$terminal" = "zsh" ]; then
+      read -rk1 "$1" </dev/tty >&2
+    else
+      # bash
+      read -rsn1 "$1" </dev/tty >&2
+    fi
   }
 
   handle_key() {
@@ -39,7 +45,7 @@ fsh() {
         # flush stdin
         read -rsn5 -t 0.1
         ;;
-      '') 
+      ''|$'\n') 
         result=$(echo "$new_choices" | head "-$((item_n + 1))" | tail -1 | remove_ansi_escape_codes)
         running=false
         ;;
@@ -76,16 +82,16 @@ fsh() {
   draw_frame() {
     move_cursor_to 0 0
     start_color "$frame_color"
-    printf "┌%s┐" "$(printf '─%.0s' $(seq 1 $((COLUMNS - 2))))"
-    for i in $(seq 2 $((LINES - 1)))
+    printf "┌%s┐" "$(printf '─%.0s' $(seq 1 $((columns - 2))))"
+    for i in $(seq 2 $((lines - 1)))
     do
       move_cursor_to "$i" 0
       printf "│"
-      move_cursor_to "$i" $COLUMNS
+      move_cursor_to "$i" $columns
       printf "│"
     done
-    move_cursor_to $LINES 0
-    printf "└%s┘" "$(printf '─%.0s' $(seq 1 $((COLUMNS - 2))))"
+    move_cursor_to $lines 0
+    printf "└%s┘" "$(printf '─%.0s' $(seq 1 $((columns - 2))))"
     end_color
   }
   
@@ -96,34 +102,35 @@ fsh() {
     do
       cursor=" "$(end_color)
       [ $i -eq $item_n ] && cursor=$(printf "%s>%s%s" "$(start_color "$select_color")" "$(end_color)" "$(start_color "$selector_color")")
-      printf "\n%s%s %s %s%s" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" "$(printf " %.0s" $(seq 1 $((COLUMNS - 5 - ${#choice}))))"
+      printf "\n%s%s %s %s%s" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" "$(printf " %.0s" $(seq 1 $((columns - 5 - ${#choice}))))"
       i=$((i - 1))
     done
     display_n_choice="$n_choices"
     [ "$new_choices" = "" ] && display_n_choice=0
     choices_quota=$(printf "%d/%d" "$display_n_choice" "$total_n_choices")
-    printf "\n%s%s%s%s %s%s%s" "$(start_color "$frame_color")" "$choices_quota" "$(end_color)" "$header" $(start_color "$frame_color") "$(printf "─%.0s" $(seq 1 $((COLUMNS - 5 - ${#header} - ${#choices_quota}))))" "$(end_color)"
-    printf "\n%s>%s %s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" "$(printf " %.0s" $(seq 1 $((COLUMNS - 5 - ${#filter}))))"
+    printf "\n%s%s%s%s %s%s%s" "$(start_color "$frame_color")" "$choices_quota" "$(end_color)" "$header" $(start_color "$frame_color") "$(printf "─%.0s" $(seq 1 $((columns - 5 - ${#header} - ${#choices_quota}))))" "$(end_color)"
+    printf "\n%s>%s %s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" "$(printf " %.0s" $(seq 1 $((columns - 5 - ${#filter}))))"
     ) | sed 's/^/  /' 
   }
 
   draw_frame_content() {
     new_choices=$(get_new_choices)
     n_choices=$(echo "$new_choices" | wc -l)
-    start_line=$(( LINES -  n_choices - 4))
+    start_line=$(( lines -  n_choices - 4))
     for i in $(seq 1 $((start_line + 1)))
     do
       move_cursor_to "$i" 0
-      printf " %0.s" $(seq 1 $((COLUMNS - 5)))
+      printf " %0.s" $(seq 1 $((columns - 5)))
     done
     s=$(print_text)
     printf "%s" "$s"
   }
 
   init() {
+    terminal="$(ps -p $$ -o comm=)"
     setup_theme
     header=""
-    [ -n "$1" ] && header=" $1"
+    [ "$#" -gt 1 ] && header=" $1"
     if read -t 0; then
       choices=$(cat)
     else
@@ -134,6 +141,8 @@ fsh() {
     result=""
     running=true
     item_n=0
+    lines=$(tput lines)
+    columns=$(tput cols)
   }
 
   draw() {
@@ -146,6 +155,13 @@ fsh() {
     while $running
     do
       draw >&2
+      if [ -n "$FSH_SCREENSHOT" ]
+      then
+        mkdir -p _screenshot
+        [ -z "$FSH_SCREENSHOT_N" ] && FSH_SCREENSHOT_N=0
+        FSH_SCREENSHOT_N=$((FSH_SCREENSHOT_N + 1))
+        import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$FSH_SCREENSHOT_N")" >/dev/null 2>&1
+      fi
       handle_key >/dev/null 2>&1
     done
   }
@@ -156,6 +172,10 @@ fsh() {
     run
     rmcup
     if [ -n "$result" ]; then
+      if [ -n "$FSH_SCREENSHOT" ]
+      then
+        convert -delay 100 -loop 0 _screenshot/screenshot*.jpg animation.gif
+      fi
       echo "$result"
     else
       false
