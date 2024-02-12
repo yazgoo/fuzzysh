@@ -96,34 +96,36 @@ fsh() {
   }
   
   print_text() {
-    (
     i="$((n_choices - 1))"
+    line_header=$(printf "\n%s│%s " "$(start_color "$frame_color")" "$(end_color)")
     echo "$new_choices" | tac | while read -r choice
     do
       cursor=" "$(end_color)
       [ $i -eq $item_n ] && cursor=$(printf "%s>%s%s" "$(start_color "$select_color")" "$(end_color)" "$(start_color "$selector_color")")
-      printf "\n%s%s %s %s%s" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" "$(printf " %.0s" $(seq 1 $((columns - 5 - ${#choice}))))"
+      printf "%s%s%s %s %s%s" "$line_header" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" "$(printf " %.0s" $(seq 1 $((columns - 6 - ${#choice}))))"
       i=$((i - 1))
     done
     display_n_choice="$n_choices"
     [ "$new_choices" = "" ] && display_n_choice=0
     choices_quota=$(printf "%d/%d" "$display_n_choice" "$total_n_choices")
-    printf "\n%s%s%s%s %s%s%s" "$(start_color "$frame_color")" "$choices_quota" "$(end_color)" "$header" $(start_color "$frame_color") "$(printf "─%.0s" $(seq 1 $((columns - 5 - ${#header} - ${#choices_quota}))))" "$(end_color)"
-    printf "\n%s>%s %s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" "$(printf " %.0s" $(seq 1 $((columns - 5 - ${#filter}))))"
-    ) | sed 's/^/  /' 
+    printf "%s%s%s%s%s %s%s%s" "$line_header" "$(start_color "$frame_color")" "$choices_quota" "$(end_color)" "$header" $(start_color "$frame_color") "$(printf "─%.0s" $(seq 1 $((columns - 5 - ${#header} - ${#choices_quota}))))" "$(end_color)"
+    printf "\n  %s>%s %s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" "$(printf " %.0s" $(seq 1 $((columns - 6 - ${#filter}))))"
+  }
+
+  print_whitespaces_content() {
+    start_line=$(( lines -  n_choices - 4))
+    for i in $(seq 2 $((start_line + 1)))
+    do
+      move_cursor_to "$i" 2
+      printf " %0.s" $(seq 1 $((columns - 6)))
+    done
   }
 
   draw_frame_content() {
     new_choices=$(get_new_choices)
     n_choices=$(echo "$new_choices" | wc -l)
-    start_line=$(( lines -  n_choices - 4))
-    for i in $(seq 1 $((start_line + 1)))
-    do
-      move_cursor_to "$i" 0
-      printf " %0.s" $(seq 1 $((columns - 5)))
-    done
-    s=$(print_text)
-    printf "%s" "$s"
+    print_whitespaces_content
+    print_text
   }
 
   init() {
