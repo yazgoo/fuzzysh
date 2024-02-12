@@ -174,7 +174,8 @@ fsh() {
     if [ -n "$result" ]; then
       if [ -n "$FSH_SCREENSHOT" ]
       then
-        convert -delay 100 -loop 0 _screenshot/screenshot*.jpg animation.gif
+        convert -delay 100 -loop 0 _screenshot/screenshot*.jpg doc/animation.gif
+        convert doc/animation.gif -resize 50% doc/animation_small.gif
       fi
       echo "$result"
     else
