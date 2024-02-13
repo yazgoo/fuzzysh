@@ -95,21 +95,32 @@ fsh() {
     end_color
   }
   
-  print_text() {
-    i="$((n_choices - 1))"
-    line_header=$(printf "\n%s│%s " "$(start_color "$frame_color")" "$(end_color)")
+  print_choices() {
     echo "$new_choices" | tac | while read -r choice
     do
-      cursor=" "$(end_color)
-      [ $i -eq $item_n ] && cursor=$(printf "%s>%s%s" "$(start_color "$select_color")" "$(end_color)" "$(start_color "$selector_color")")
-      printf "%s%s%s %s %s%s" "$line_header" "$(start_color "$selector_color")" "$cursor" "$choice" "$(end_color)" "$(printf " %.0s" $(seq 1 $((columns - 6 - ${#choice}))))"
+      cursor=" "$__end_color
+      [ $i -eq $item_n ] && cursor="${__start_select_color}>$__end_color$__start_selector_color"
+      printf "%s%s%s %s %s %*c" "$line_header" "$__start_selector_color" "$cursor" "$choice" \
+        "$__end_color" "$((columns - 6 - ${#choice}))" " "
       i=$((i - 1))
     done
+  }
+
+  print_two_last_text_lines() {
     display_n_choice="$n_choices"
     [ "$new_choices" = "" ] && display_n_choice=0
-    choices_quota=$(printf "%d/%d" "$display_n_choice" "$total_n_choices")
-    printf "%s%s%s%s%s %s%s%s" "$line_header" "$(start_color "$frame_color")" "$choices_quota" "$(end_color)" "$header" $(start_color "$frame_color") "$(printf "─%.0s" $(seq 1 $((columns - 5 - ${#header} - ${#choices_quota}))))" "$(end_color)"
-    printf "\n  %s>%s %s %s" "$(start_color "$prompt_color")" "$(end_color)" "$filter" "$(printf " %.0s" $(seq 1 $((columns - 6 - ${#filter}))))"
+    choices_quota="$display_n_choice/$total_n_choices"
+    printf "%s%s%s%s%s %s%s%s\n  %s>%s %s  %*c" "$line_header" "$__start_frame_color" "$choices_quota" \
+      "$__end_color" "$header" "$__start_frame_color" \
+      "$(printf "─%.0s" $(seq 1 $((columns - 5 - ${#header} - ${#choices_quota}))))" "$__end_color" \
+      "$__start_prompt_color" "$__end_color" \
+      "$filter" "$((columns - 6 - ${#filter}))" " " 
+  }
+
+  print_text() {
+    i="$((n_choices - 1))"
+    print_choices
+    print_two_last_text_lines
   }
 
   print_whitespaces_content() {
@@ -117,7 +128,7 @@ fsh() {
     for i in $(seq 2 $((start_line + 1)))
     do
       move_cursor_to "$i" 2
-      printf " %0.s" $(seq 1 $((columns - 6)))
+      printf " %*.c" "$((columns - 6))" " "
     done
   }
 
@@ -145,11 +156,25 @@ fsh() {
     item_n=0
     lines=$(tput lines)
     columns=$(tput cols)
+    __end_color=$(end_color)
+    __start_frame_color=$(start_color "$frame_color")
+    __start_prompt_color=$(start_color "$prompt_color")
+    __start_selector_color=$(start_color "$selector_color")
+    __start_select_color=$(start_color "$select_color")
+    line_header=$(printf "\n%s│%s " "$__start_frame_color" "$__end_color")
+  }
+
+  instrument() {
+    start_time_ms=$(date +%s%3N)
+    "$1"
+    end_time_ms=$(date +%s%3N)
   }
 
   draw() {
-    draw_frame_content
+    instrument draw_frame_content
     draw_frame
+    move_cursor_to "$lines" 2
+    [ -n "$FSH_PERF" ] && printf "%sms" "$((end_time_ms - start_time_ms))"
   }
 
   run() {
