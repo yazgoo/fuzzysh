@@ -15,8 +15,10 @@ fsh() {
     sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 
   }
 
-  get_new_choices() {
-    echo "$choices" | GREP_COLORS="$grep_colors" grep -i --color=always "$filter"
+  generate_choices_nums() {
+    new_choices=$(echo "$choices" | GREP_COLORS="$grep_colors" grep -i --color=always "$filter")
+    IFS=$'\n' read -r -d '' -a new_choices_a <<< "$new_choices"
+    n_choices=${#new_choices_a[@]}
   }
 
   read_key() {
@@ -46,7 +48,8 @@ fsh() {
         read -rsn5 -t 0.1
         ;;
       ''|$'\n') 
-        result=$(echo "$new_choices" | head "-$((item_n + 1))" | tail -1 | remove_ansi_escape_codes)
+        index=$((n_choices - item_n - 1))
+        result=$(echo "${new_choices_a[$index]}" | remove_ansi_escape_codes)
         running=false
         ;;
       # not POSIX
@@ -96,7 +99,7 @@ fsh() {
   }
   
   print_choices() {
-    echo "$new_choices" | tac | while read -r choice
+    for choice in "${new_choices_a[@]}"
     do
       cursor=" "$__end_color
       [ $i -eq $item_n ] && cursor="${__start_select_color}>$__end_color$__start_selector_color"
@@ -108,7 +111,7 @@ fsh() {
 
   print_two_last_text_lines() {
     display_n_choice="$n_choices"
-    [ "$new_choices" = "" ] && display_n_choice=0
+    [ ${#new_choices_a[@]} -eq 0 ] && display_n_choice=0
     choices_quota="$display_n_choice/$total_n_choices"
     printf "%s%s%s%s%s %s%s%s\n  %s>%s %s  %*c" "$line_header" "$__start_frame_color" "$choices_quota" \
       "$__end_color" "$header" "$__start_frame_color" \
@@ -133,8 +136,7 @@ fsh() {
   }
 
   draw_frame_content() {
-    new_choices=$(get_new_choices)
-    n_choices=$(echo "$new_choices" | wc -l)
+    generate_choices_nums
     print_whitespaces_content
     print_text
   }
@@ -168,20 +170,21 @@ fsh() {
     start_time_ms=$(date +%s%3N)
     "$1"
     end_time_ms=$(date +%s%3N)
+    delta_time="$((end_time_ms - start_time_ms))"
   }
 
   draw() {
-    instrument draw_frame_content
+    draw_frame_content
     draw_frame
     move_cursor_to "$lines" 2
-    [ -n "$FSH_PERF" ] && printf "%sms" "$((end_time_ms - start_time_ms))"
+    [ -n "$FSH_PERF" ] && printf "%sms" "$delta_time"
   }
 
   run() {
     clear >&2
     while $running
     do
-      draw >&2
+      instrument draw >&2
       if [ -n "$FSH_SCREENSHOT" ]
       then
         mkdir -p _screenshot
