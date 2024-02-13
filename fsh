@@ -159,7 +159,12 @@ fsh() {
     else
       choices=$(find . -not -path '*/.*' | sed 's,^./,,')
     fi
-    IFS=$'\n' read -r -d '' -a choices_a <<< "$choices"
+    if [ "$terminal" = "zsh" ]
+    then
+      choices_a=("${(f)choices}")
+    else
+      IFS=$'\n' read -r -d '' -a choices_a <<< "$choices"
+    fi
     total_n_choices=$(echo "$choices" | wc -l)
     filter=""
     result=""
