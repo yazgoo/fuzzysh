@@ -5,7 +5,6 @@ fsh() {
 
   setup_theme() {
     selector_color=${FSH_SELECTOR_COLOR:=40}
-    grep_colors=${FSH_GREP_COLORS:='ms=01;92'}
     frame_color=${FSH_FRAME_COLOR:=30}
     prompt_color=${FSH_PROMPT_COLOR:=34}
     select_color=${FSH_SELECT_COLOR:=31}
@@ -16,8 +15,14 @@ fsh() {
   }
 
   generate_choices_nums() {
-    new_choices=$(echo "$choices" | GREP_COLORS="$grep_colors" grep -i --color=always "$filter")
-    IFS=$'\n' read -r -d '' -a new_choices_a <<< "$new_choices"
+    new_choices_a=()
+    for choice in "${choices_a[@]}"
+    do
+      if [[ "$choice" == *"$filter"* ]]
+      then
+        new_choices_a+=("$choice")
+      fi
+    done
     n_choices=${#new_choices_a[@]}
   }
 
@@ -128,10 +133,13 @@ fsh() {
 
   print_whitespaces_content() {
     start_line=$(( lines -  n_choices - 4))
-    for i in $(seq 2 $((start_line + 1)))
+    i=2
+    end=$((start_line + 1))
+    while [ $i -lt $end ]
     do
       move_cursor_to "$i" 2
       printf " %*.c" "$((columns - 6))" " "
+      i=$((i + 1))
     done
   }
 
@@ -151,6 +159,7 @@ fsh() {
     else
       choices=$(find . -not -path '*/.*' | sed 's,^./,,')
     fi
+    IFS=$'\n' read -r -d '' -a choices_a <<< "$choices"
     total_n_choices=$(echo "$choices" | wc -l)
     filter=""
     result=""
@@ -184,7 +193,7 @@ fsh() {
     clear >&2
     while $running
     do
-      instrument draw >&2
+      draw >&2
       if [ -n "$FSH_SCREENSHOT" ]
       then
         mkdir -p _screenshot

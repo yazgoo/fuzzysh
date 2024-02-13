@@ -8,6 +8,12 @@ You need to select between several choices in a shell script with minimal depend
 
 Just copy / paste the fsh function in your script.
 
+## limitations
+
+- for now, it is not POSIX shell, it's only tested in zsh and bash.
+- no fuzzy finding, use globbing pattern instead by design.
+- to keep this as lightweight as possible, I don't plan on adding new features, except optional support for vim mode 
+
 ## usage
 
 Example:
@@ -46,9 +52,3 @@ Hallo, Welt!
 ```
 
 </details>
-
-## limitations
-
-- for now, it is not POSIX shell, it's only tested in zsh and bash.
-- no fuzzy finding, use grep pattern instead by design.
-  You can use `.*` in your query if you want to do something like fuzzy finding.
