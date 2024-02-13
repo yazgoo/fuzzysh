@@ -59,7 +59,7 @@ fsh() {
   }
 
   smcup() {
-    stty -echo
+    stty -echo 2>/dev/null
     printf "\e[?1049h"
     printf "\e[?25l"
   }
@@ -67,7 +67,7 @@ fsh() {
   rmcup() {
     printf "\e[?1049l"
     printf "\e[?25h"
-    stty echo
+    stty echo 2>/dev/null
   }
 
   move_cursor_to() {
