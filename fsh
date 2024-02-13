@@ -18,7 +18,7 @@ fsh() {
     new_choices_a=()
     for choice in "${choices_a[@]}"
     do
-      if [[ "$choice" == *"$filter"* ]]
+      if [[ "$choice" =~ $filter ]]
       then
         new_choices_a+=("$choice")
       fi

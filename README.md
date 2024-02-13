@@ -11,7 +11,7 @@ Just copy / paste the fsh function in your script.
 ## limitations
 
 - for now, it is not POSIX shell, it's only tested in zsh and bash.
-- no fuzzy finding, use globbing pattern instead by design.
+- no fuzzy finding, uses regular expression pattern matching instead (might change in the future).
 - to keep this as lightweight as possible, I don't plan on adding new features, except optional support for vim mode 
 
 ## usage
