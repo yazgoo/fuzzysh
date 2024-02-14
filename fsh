@@ -28,8 +28,7 @@ fsh() {
     n_choices=${#new_choices_a[@]}
   }
 
-  read_key() {
-    # not POSIX
+  read_key_nominal() {
     if [ "$terminal" = "zsh" ]; then
       read -rk1 "$1" </dev/tty >&2
     else
@@ -48,41 +47,46 @@ fsh() {
     fi
   }
 
-  handle_key() {
+  read_key() {
     # the simulated user input given as a string, one character at a time. if set the script will not read from stdin
     if [ -n "${FSH_TEST_INPUT:=""}" ]
     then
       read_key_test
     else
-      read_key key
+      read_key_nominal "$1"
     fi
+  }
+
+  handle_arrow_keys() {
+    read_key key3
+    # arrows
+    key2=""
+    read_key key2
+    case "$key2" in
+      'A') [ "$item_n" -lt "$((n_choices - 1))" ] && item_n=$((item_n + 1)) ;;
+      'B') [ "$item_n" -gt 0 ] && item_n=$((item_n - 1)) ;;
+      *) ;;
+    esac
+    # flush stdin
+    read -rsn5 -t 0.1
+  }
+
+  handle_enter_key() {
+    index=$((n_choices - item_n - 1))
+    [ "$terminal" = "zsh" ] && index=$((index + 1))
+    result="${new_choices_a[$index]}"
+    running=false
+  }
+
+  handle_key() {
+    read_key key
     case "$key" in
       ' ') filter="$filter " ;;
-      $'\x1b') 
-        read_key key3
-        # arrows
-        key2=""
-        read_key key2
-        case "$key2" in
-          'A') [ "$item_n" -lt "$((n_choices - 1))" ] && item_n=$((item_n + 1)) ;;
-          'B') [ "$item_n" -gt 0 ] && item_n=$((item_n - 1)) ;;
-          *) ;;
-        esac
-        # flush stdin
-        read -rsn5 -t 0.1
-        ;;
-      ''|$'\n') 
-        index=$((n_choices - item_n - 1))
-        [ "$terminal" = "zsh" ] && index=$((index + 1))
-        result="${new_choices_a[$index]}"
-        running=false
-        ;;
-      # not POSIX
+      $'\x1b') handle_arrow_keys ;;
+      ''|$'\n') handle_enter_key ;;
       $'\x7f') filter="${filter%?}" ;;
       *) filter="${filter}${key}" ;;
     esac
-
-
   }
 
   smcup() {
