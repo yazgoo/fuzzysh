@@ -162,13 +162,18 @@ fsh() {
   }
 
   init() {
-    choices=$(cat </dev/stdin)
     terminal="$(ps -p $$ -o comm=)"
     setup_theme
     header=""
     [ "$#" -gt 1 ] && header=" $1"
-    if [ -z "$choices" ]
+    
+    if [ "$terminal" = zsh ] && [ ! -t 0 ]
     then
+      choices=$(cat </dev/stdin)
+    elif [ "$terminal" != zsh ] && read -t0
+    then
+      choices=$(cat </dev/stdin)
+    else
       choices=$(find . -not -path '*/.*' | sed 's,^./,,')
     fi
     if [ "$terminal" = "zsh" ]
