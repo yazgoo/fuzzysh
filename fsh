@@ -200,6 +200,8 @@ fsh() {
     header="${FSH_HEADER:=""}"
     # (not implemented) set this variable to support vim normal mode
     vim_mode="${FSH_VIM_MODE:=""}"
+    # if this variable is set, will display the time it took to draw the interface
+    perf_mode="${FSH_PERF:=""}"
     get_choices
     filter=""
     result=""
@@ -228,7 +230,7 @@ fsh() {
     draw_frame_content
     draw_frame
     move_cursor_to "$lines" 2
-    [ -n "$FSH_PERF" ] && printf "%sms" "$delta_time"
+    [ -n "$perf_mode" ] && printf "%sms" "$delta_time"
   }
 
   write_screenshot() {
@@ -241,7 +243,7 @@ fsh() {
     clear >&2
     while $running
     do
-      draw >&2
+      instrument draw >&2
       # if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end
       [ -n "${FSH_SCREENSHOT:=""}" ] && write_screenshot
       handle_key >/dev/null 2>&1

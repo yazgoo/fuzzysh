@@ -68,6 +68,7 @@ Hallo, Welt!
  | FSH_TEST_INPUT | the simulated user input given as a string, one character at a time. if set the script will not read from stdin | "" |
  | FSH_HEADER | a name to display beofre the prompt to give context on what is expected | "" |
  | FSH_VIM_MODE | (not implemented) set this variable to support vim normal mode | "" |
+ | FSH_PERF | if this variable is set, will display the time it took to draw the interface | "" |
  | FSH_SCREENSHOT | if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end | "" |
 
 </details>
