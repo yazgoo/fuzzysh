@@ -1,3 +1,4 @@
+cat <<'EOT' > README.md
 minimalist selector in shell, inspired by fzf
 
 [![screenshot](doc/animation_small.gif)](doc/animation.gif)
@@ -53,17 +54,24 @@ Hallo, Welt!
 
 </details>
 
+EOT
 
-## variables reference
+(
+echo
+echo "## variables reference"
+echo
+echo You can customize the behavior of fsh by setting the following variables:
+echo
 
-You can customize the behavior of fsh by setting the following variables:
+echo " | Variable | Description | Default value |"
+echo " | -------- | ----------- | ------------- |"
+grep -Eo 'FSH_[A-Z_]*:=[^}]*' ./fsh | while read input_variable
+do
+  variable_name=$(echo "$input_variable" | cut -d':' -f1)
+  default_value=$(echo "$input_variable" | cut -d'=' -f2)
+  description=$(grep -B1 "$input_variable" ./fsh | head -n1 | sed 's/ *# *//')
 
- | Variable | Description | Default value |
- | -------- | ----------- | ------------- |
- | FSH_SELECTOR_COLOR | the color line currently highlighted | 40 |
- | FSH_FRAME_COLOR | the color of the frame | 30 |
- | FSH_PROMPT_COLOR | the color used for the prompt | 34 |
- | FSH_SELECT_COLOR | the color of the sign before the line currently selected  | 31 |
- | FSH_TEST_INPUT | the simulated user input given as a string, one character at a time. if set the script will not read from stdin | "" |
- | FSH_HEADER | a name to display beofre the prompt to give context on what is expected | "" |
- | FSH_SCREENSHOT | if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end | "" |
+  echo " | $variable_name | $description | $default_value |"
+
+done
+) >> README.md

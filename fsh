@@ -2,9 +2,13 @@ fsh() {
   # https://github.com/yazgoo/fuzzysh/
 
   setup_theme() {
+    # the color line currently highlighted
     selector_color=${FSH_SELECTOR_COLOR:=40}
+    # the color of the frame
     frame_color=${FSH_FRAME_COLOR:=30}
+    # the color used for the prompt
     prompt_color=${FSH_PROMPT_COLOR:=34}
+    # the color of the sign before the line currently selected 
     select_color=${FSH_SELECT_COLOR:=31}
   }
 
@@ -45,7 +49,8 @@ fsh() {
   }
 
   handle_key() {
-    if [ -n "$FSH_TEST_INPUT" ]
+    # the simulated user input given as a string, one character at a time. if set the script will not read from stdin
+    if [ -n "${FSH_TEST_INPUT:=""}" ]
     then
       read_key_test
     else
@@ -191,8 +196,8 @@ fsh() {
   init() {
     terminal="$(ps -p $$ -o comm=)"
     setup_theme
-    header=""
-    [ "$#" -ge 1 ] && header=" $1"
+    # a name to display beofre the prompt to give context on what is expected
+    header="${FSH_HEADER:=""}"
     get_choices
     filter=""
     result=""
@@ -207,6 +212,7 @@ fsh() {
     __start_select_color=$(start_color "$select_color")
     line_header=$(printf "\n%s│%s " "$__start_frame_color" "$__end_color")
     key_test_i=0
+    screenshot_n=0
   }
 
   instrument() {
@@ -225,9 +231,8 @@ fsh() {
 
   write_screenshot() {
     mkdir -p _screenshot
-    [ -z "$FSH_SCREENSHOT_N" ] && FSH_SCREENSHOT_N=0
-    FSH_SCREENSHOT_N=$((FSH_SCREENSHOT_N + 1))
-    import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$FSH_SCREENSHOT_N")" >/dev/null 2>&1
+    screenshot_n=$((screenshot_n + 1))
+    import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$screenshot_n")" >/dev/null 2>&1
   }
 
   run() {
@@ -235,7 +240,8 @@ fsh() {
     while $running
     do
       draw >&2
-      [ -n "$FSH_SCREENSHOT" ] && write_screenshot
+      # if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end
+      [ -n "${FSH_SCREENSHOT:=""}" ] && write_screenshot
       handle_key >/dev/null 2>&1
     done
   }
