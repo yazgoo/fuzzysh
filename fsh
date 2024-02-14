@@ -56,6 +56,7 @@ fsh() {
       $'\x1b') 
         read_key key3
         # arrows
+        key2=""
         read_key key2
         case "$key2" in
           'A') [ "$item_n" -lt "$((n_choices - 1))" ] && item_n=$((item_n + 1)) ;;
@@ -111,10 +112,10 @@ fsh() {
     do
       move_cursor_to "$i" 0
       printf "│"
-      move_cursor_to "$i" $columns
+      move_cursor_to "$i" "$columns"
       printf "│"
     done
-    move_cursor_to $lines 0
+    move_cursor_to "$lines" 0
     printf "└%s┘" "$(printf '─%.0s' $(seq 1 $((columns - 2))))"
     end_color
   }
@@ -165,16 +166,11 @@ fsh() {
     print_text
   }
 
-  init() {
-    terminal="$(ps -p $$ -o comm=)"
-    setup_theme
-    header=""
-    [ "$#" -gt 1 ] && header=" $1"
-    
+  get_choices() {
     if [ "$terminal" = zsh ] && [ ! -t 0 ]
     then
       choices=$(cat </dev/stdin)
-    elif [ "$terminal" != zsh ] && read -t0
+    elif [ "$terminal" != zsh ] && read -r -t0
     then
       choices=$(cat </dev/stdin)
     fi
@@ -184,11 +180,20 @@ fsh() {
     fi
     if [ "$terminal" = "zsh" ]
     then
+      # shellcheck disable=SC2296
       choices_a=("${(f)choices}")
     else
       IFS=$'\n' read -r -d '' -a choices_a <<< "$choices"
     fi
     total_n_choices=$(echo "$choices" | wc -l)
+  }
+
+  init() {
+    terminal="$(ps -p $$ -o comm=)"
+    setup_theme
+    header=""
+    [ "$#" -ge 1 ] && header=" $1"
+    get_choices
     filter=""
     result=""
     running=true
