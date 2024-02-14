@@ -36,8 +36,14 @@ fsh() {
     fi
   }
 
-  handle_key_test() {
-    key=$'\n'
+  read_key_test() {
+    if [ "$key_test_i" -lt ${#FSH_TEST_INPUT} ]
+    then
+      key="${FSH_TEST_INPUT:$key_test_i:1}"
+      key_test_i=$((key_test_i + 1))
+    else
+      key=$'\n'
+    fi
   }
 
   handle_key() {
@@ -173,7 +179,9 @@ fsh() {
     elif [ "$terminal" != zsh ] && read -t0
     then
       choices=$(cat </dev/stdin)
-    else
+    fi
+    if [ -z "$choices" ]
+    then
       choices=$(find . -not -path '*/.*' | sed 's,^./,,')
     fi
     if [ "$terminal" = "zsh" ]
@@ -195,6 +203,7 @@ fsh() {
     __start_selector_color=$(start_color "$selector_color")
     __start_select_color=$(start_color "$select_color")
     line_header=$(printf "\n%s│%s " "$__start_frame_color" "$__end_color")
+    key_test_i=0
   }
 
   instrument() {
