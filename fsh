@@ -36,8 +36,17 @@ fsh() {
     fi
   }
 
+  handle_key_test() {
+    key=$'\n'
+  }
+
   handle_key() {
-    read_key key
+    if [ -n "$FSH_TEST_INPUT" ]
+    then
+      read_key_test
+    else
+      read_key key
+    fi
     case "$key" in
       ' ') filter="$filter " ;;
       $'\x1b') 
@@ -61,6 +70,8 @@ fsh() {
       $'\x7f') filter="${filter%?}" ;;
       *) filter="${filter}${key}" ;;
     esac
+
+
   }
 
   smcup() {
@@ -194,20 +205,26 @@ fsh() {
     [ -n "$FSH_PERF" ] && printf "%sms" "$delta_time"
   }
 
+  write_screenshot() {
+    mkdir -p _screenshot
+    [ -z "$FSH_SCREENSHOT_N" ] && FSH_SCREENSHOT_N=0
+    FSH_SCREENSHOT_N=$((FSH_SCREENSHOT_N + 1))
+    import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$FSH_SCREENSHOT_N")" >/dev/null 2>&1
+  }
+
   run() {
     clear >&2
     while $running
     do
       draw >&2
-      if [ -n "$FSH_SCREENSHOT" ]
-      then
-        mkdir -p _screenshot
-        [ -z "$FSH_SCREENSHOT_N" ] && FSH_SCREENSHOT_N=0
-        FSH_SCREENSHOT_N=$((FSH_SCREENSHOT_N + 1))
-        import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$FSH_SCREENSHOT_N")" >/dev/null 2>&1
-      fi
+      [ -n "$FSH_SCREENSHOT" ] && write_screenshot
       handle_key >/dev/null 2>&1
     done
+  }
+
+  generate_animation() {
+    convert -delay 100 -loop 0 _screenshot/screenshot*.jpg doc/animation.gif
+    convert doc/animation.gif -resize 50% doc/animation_small.gif
   }
 
   main() {
@@ -215,12 +232,8 @@ fsh() {
     smcup
     run
     rmcup
+    [ -n "$FSH_SCREENSHOT" ] && generate_animation
     if [ -n "$result" ]; then
-      if [ -n "$FSH_SCREENSHOT" ]
-      then
-        convert -delay 100 -loop 0 _screenshot/screenshot*.jpg doc/animation.gif
-        convert doc/animation.gif -resize 50% doc/animation_small.gif
-      fi
       echo "$result"
     else
       false
