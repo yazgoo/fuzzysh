@@ -1,22 +1,33 @@
-minimalist selector in shell, inspired by fzf
 
-[![screenshot](doc/animation_small.gif)](doc/animation.gif)
+<table>
+<tr>
+
+<td>
+
+Minimalist selector in shell, à la [fzf](https://github.com/junegunn/fzf)
 
 ## what's it for ?
 
-You need to select between several choices in a shell script with minimal dependencies ?
+You need to:
 
-Just copy / paste the fsh function in your script.
+- select between several choices ?
+- in a shell script ?
+- with minimal dependencies ?
 
-## limitations
+**Just copy the [fsh](fsh) function in your script.**
 
-- for now, it is not POSIX shell, it's only tested in zsh and bash.
-- no fuzzy finding, uses regular expression pattern matching instead (might change in the future).
-- to keep this as lightweight as possible, I don't plan on adding new features, except optional support for vim mode 
+</td>
 
-## usage
+<td>
 
-Example:
+[![screenshot](doc/animation_small.gif)](doc/animation.gif)
+
+</td>
+
+</tr>
+</table>
+
+## usage example
 
 ```bash
 $ echo -e 'Hello, world!\n¡Hola, mundo!\nBonjour, le monde !\nHallo, Welt!' | ./fsh
@@ -52,6 +63,12 @@ Hallo, Welt!
 ```
 
 </details>
+
+## limitations
+
+- it is not POSIX shell: it's only tested in `zsh` and `bash`.
+- no fuzzy finding: uses regular expression pattern matching instead (might change in the future).
+- to keep it lightweight, I (mostly) don't plan on adding new features
 
 
 ## variables reference
