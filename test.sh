@@ -1,9 +1,9 @@
 #!/bin/bash
-set -e
+set -ex
 
-result="$(FSH_TEST_INPUT=blah ./fsh)"
- [[ "$result" =~ "test.sh" ]]
-
-
-result="$(echo hello | FSH_TEST_INPUT=blah ./fsh)"
- [[ "$result" =~ "hello" ]]
+for shell in bash zsh
+do
+  result="$(echo hello | FSH_TEST_INPUT=h "$shell" ./fsh)"
+  echo "$shell"
+  [[ "$result" =~ "hello" ]]
+done

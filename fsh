@@ -63,6 +63,7 @@ fsh() {
         ;;
       ''|$'\n') 
         index=$((n_choices - item_n - 1))
+        [ "$terminal" = "zsh" ] && index=$((index + 1))
         result=$(echo "${new_choices_a[$index]}" | remove_ansi_escape_codes)
         running=false
         ;;
@@ -165,9 +166,9 @@ fsh() {
     setup_theme
     header=""
     [ "$#" -gt 1 ] && header=" $1"
-    if read -t 0; then
-      choices=$(cat)
-    else
+    choices=$(cat </dev/stdin)
+    if [ -z "$choices" ]
+    then
       choices=$(find . -not -path '*/.*' | sed 's,^./,,')
     fi
     if [ "$terminal" = "zsh" ]
