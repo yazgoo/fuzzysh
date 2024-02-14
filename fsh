@@ -20,7 +20,7 @@ fsh() {
     new_choices_a=()
     for choice in "${choices_a[@]}"
     do
-      if [[ "$choice" =~ $filter ]]
+      if [[ "$choice" =~ $fuzzy_filter ]]
       then
         new_choices_a+=("$choice")
       fi
@@ -30,10 +30,10 @@ fsh() {
 
   read_key_nominal() {
     if [ "$terminal" = "zsh" ]; then
-      read -rk1 "$1" </dev/tty >&2
+      IFS= read -rk1 "$1" </dev/tty >&2
     else
       # bash
-      read -rsn1 "$1" </dev/tty >&2
+      IFS= read -rsn1 "$1" </dev/tty >&2
     fi
   }
 
@@ -78,14 +78,32 @@ fsh() {
     running=false
   }
 
+  filter_append() {
+    filter="${filter}${1}"
+    if [ "$terminal" = zsh ]
+    then
+      fuzzy_filter="${fuzzy_filter}.*[${1:l}${1:u}]"
+    else
+      fuzzy_filter="${fuzzy_filter}.*[${1,,}${1^^}]"
+    fi
+  }
+
+  filter_pop() {
+    filter="${filter%?}"
+    for _ in {1..6}
+    do
+      fuzzy_filter="${fuzzy_filter%?}"
+    done
+  }
+
   handle_key() {
     read_key key
     case "$key" in
-      ' ') filter="$filter " ;;
+      ' ') filter_append " ";;
       $'\x1b') handle_arrow_keys ;;
       ''|$'\n') handle_enter_key ;;
-      $'\x7f') filter="${filter%?}" ;;
-      *) filter="${filter}${key}" ;;
+      $'\x7f') filter_pop ;;
+      *) filter_append "$key" ;;
     esac
   }
 
@@ -194,7 +212,7 @@ fsh() {
     else
       IFS=$'\n' read -r -d '' -a choices_a <<< "$choices"
     fi
-    total_n_choices=$(echo "$choices" | wc -l)
+    total_n_choices=${#choices_a[@]}
   }
 
   init() {
@@ -208,6 +226,7 @@ fsh() {
     perf_mode="${FSH_PERF:=""}"
     get_choices
     filter=""
+    fuzzy_filter=""
     result=""
     running=true
     item_n=0
