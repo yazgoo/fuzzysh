@@ -77,13 +77,13 @@ fsh() {
 
   smcup() {
     stty -echo 2>/dev/null
-    printf "\e[?1049h"
-    printf "\e[?25l"
+    printf "\e[?1049h" >&2
+    printf "\e[?25l" >&2
   }
 
   rmcup() {
-    printf "\e[?1049l"
-    printf "\e[?25h"
+    printf "\e[?1049l" >&2
+    printf "\e[?25h" >&2
     stty echo 2>/dev/null
   }
 
@@ -162,11 +162,11 @@ fsh() {
   }
 
   init() {
+    choices=$(cat </dev/stdin)
     terminal="$(ps -p $$ -o comm=)"
     setup_theme
     header=""
     [ "$#" -gt 1 ] && header=" $1"
-    choices=$(cat </dev/stdin)
     if [ -z "$choices" ]
     then
       choices=$(find . -not -path '*/.*' | sed 's,^./,,')
