@@ -64,7 +64,7 @@ fsh() {
       ''|$'\n') 
         index=$((n_choices - item_n - 1))
         [ "$terminal" = "zsh" ] && index=$((index + 1))
-        result=$(echo "${new_choices_a[$index]}" | remove_ansi_escape_codes)
+        result="${new_choices_a[$index]}"
         running=false
         ;;
       # not POSIX
