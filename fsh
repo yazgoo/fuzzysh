@@ -198,6 +198,8 @@ fsh() {
     setup_theme
     # a name to display beofre the prompt to give context on what is expected
     header="${FSH_HEADER:=""}"
+    # (not implemented) set this variable to support vim normal mode
+    vim_mode="${FSH_VIM_MODE:=""}"
     get_choices
     filter=""
     result=""

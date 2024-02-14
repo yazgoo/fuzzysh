@@ -56,7 +56,8 @@ Hallo, Welt!
 
 ## variables reference
 
-You can customize the behavior of fsh by setting the following variables:
+<details>
+<summary>You can customize the behavior of fsh by setting the following variables:</summary>
 
  | Variable | Description | Default value |
  | -------- | ----------- | ------------- |
@@ -66,4 +67,7 @@ You can customize the behavior of fsh by setting the following variables:
  | FSH_SELECT_COLOR | the color of the sign before the line currently selected  | 31 |
  | FSH_TEST_INPUT | the simulated user input given as a string, one character at a time. if set the script will not read from stdin | "" |
  | FSH_HEADER | a name to display beofre the prompt to give context on what is expected | "" |
+ | FSH_VIM_MODE | (not implemented) set this variable to support vim normal mode | "" |
  | FSH_SCREENSHOT | if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end | "" |
+
+</details>

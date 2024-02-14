@@ -60,7 +60,8 @@ EOT
 echo
 echo "## variables reference"
 echo
-echo You can customize the behavior of fsh by setting the following variables:
+echo "<details>"
+echo "<summary>You can customize the behavior of fsh by setting the following variables:</summary>"
 echo
 
 echo " | Variable | Description | Default value |"
@@ -74,4 +75,6 @@ do
   echo " | $variable_name | $description | $default_value |"
 
 done
+echo
+echo "</details>"
 ) >> README.md
