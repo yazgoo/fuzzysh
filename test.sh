@@ -15,8 +15,8 @@ run_test() {
 cd "$(dirname "$0")"
 for shell in bash zsh
 do
-  choices="hello"          user_input=h  expected_result=hello   run_test
-  choices="hello\nbonjour" user_input=b  expected_result=bonjour run_test
-  choices=""               user_input=te expected_result=test.sh run_test
-  choices=""               user_input=fs expected_result=fsh     run_test
+  choices="hello"          user_input=h   expected_result=hello   run_test
+  choices="hello\nbonjour" user_input=b   expected_result=bonjour run_test
+  choices=""               user_input=tes expected_result=test.sh run_test
+  choices=""               user_input=fs  expected_result=fsh     run_test
 done

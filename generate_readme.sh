@@ -74,15 +74,17 @@ Hallo, Welt!
 EOT
 
 (
-echo
-echo "## variables reference"
-echo
-echo "<details>"
-echo "<summary>You can customize the behavior of fsh by setting the following variables:</summary>"
-echo
+cat <<EOT
 
-echo " | Variable | Description | Default value |"
-echo " | -------- | ----------- | ------------- |"
+## variables reference
+
+<details>
+<summary>You can customize the behavior of fsh by setting the following variables:</summary>
+
+ | Variable | Description | Default value |
+ | -------- | ----------- | ------------- |
+EOT
+
 grep -Eo 'FSH_[A-Z_]*:=[^}]*' ./fsh | while read input_variable
 do
   variable_name=$(echo "$input_variable" | cut -d':' -f1)
