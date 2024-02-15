@@ -10,7 +10,7 @@ check_doc_up_to_date: doc
 checks: lint check_doc_up_to_date test
 	echo "All checks passed 🎉"
 install_hooks:
-	git config core.hooksPath hooks
+	git config core.hooksPath .git/hooks
 add_hooks:
 	echo make checks > .git/hooks/pre-push
 	chmod +x .git/hooks/pre-push
