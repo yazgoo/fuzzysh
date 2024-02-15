@@ -67,7 +67,6 @@ Hallo, Welt!
 ## limitations
 
 - not POSIX shell: it's only tested in `zsh` and `bash`.
-- no fuzzy finding: uses regular expression pattern matching instead (might change in the future).
 - to keep it lightweight and fast, I (mostly) don't plan on adding new features.
 
 
@@ -86,6 +85,7 @@ Hallo, Welt!
  | FSH_HEADER | a name to display beofre the prompt to give context on what is expected | "" |
  | FSH_VIM_MODE | (not implemented) set this variable to support vim normal mode | "" |
  | FSH_PERF | if this variable is set, will display the time it took to draw the interface | "" |
+ | FSH_NO_FUZZY | if this variable is set, will not use fuzzy search, instead will do a pattern match | "" |
  | FSH_SCREENSHOT | if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end | "" |
 
 </details>

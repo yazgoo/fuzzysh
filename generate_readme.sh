@@ -68,7 +68,6 @@ Hallo, Welt!
 ## limitations
 
 - not POSIX shell: it's only tested in `zsh` and `bash`.
-- no fuzzy finding: uses regular expression pattern matching instead (might change in the future).
 - to keep it lightweight and fast, I (mostly) don't plan on adding new features.
 
 EOT

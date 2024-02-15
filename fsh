@@ -80,6 +80,7 @@ fsh() {
 
   filter_append() {
     filter="${filter}${1}"
+    [ -n "$no_fuzzy" ] && fuzzy_filter="${filter}" && return
     if [ "$terminal" = zsh ]
     then
       fuzzy_filter="${fuzzy_filter}.*[${1:l}${1:u}]"
@@ -90,6 +91,7 @@ fsh() {
 
   filter_pop() {
     filter="${filter%?}"
+    [ -n "$no_fuzzy" ] && fuzzy_filter="${filter}" && return
     for _ in {1..6}
     do
       fuzzy_filter="${fuzzy_filter%?}"
@@ -225,6 +227,8 @@ fsh() {
     # if this variable is set, will display the time it took to draw the interface
     perf_mode="${FSH_PERF:=""}"
     get_choices
+    # if this variable is set, will not use fuzzy search, instead will do a pattern match
+    no_fuzzy="${FSH_NO_FUZZY:=""}"
     filter=""
     fuzzy_filter=""
     result=""
