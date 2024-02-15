@@ -14,3 +14,5 @@ install_hooks:
 add_hooks:
 	echo QUIET=true make checks > .git/hooks/pre-push
 	chmod +x .git/hooks/pre-push
+format:
+	shfmt -w -i 2 $(SRC)

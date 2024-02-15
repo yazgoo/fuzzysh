@@ -1,14 +1,14 @@
-#!/bin/bash
+#!/bin/zsh
 if [ -z "$QUIET" ]
 then
   set -x
 fi
 
-run_test () {
+🧪() {
   choices="$1"
   user_input="$2"
   fuzzy="$3"
-  [[ "$fuzzy" = no ]] || no_fuzzy=yes
+  [[ "$fuzzy" = 🔳 ]] || no_fuzzy=✅
   fails="$4"
   expected_result="$5"
   echo "run shell=$shell choices=$choices user_input=$user_input expected_result=$expected_result result=$result"
@@ -19,7 +19,7 @@ run_test () {
     result="$(echo -e "$choices"| FSH_NO_FUZZY="$no_fuzzy" FSH_TEST_INPUT="$user_input" "$shell" ./fsh)"
   fi
   rc=$?
-  if [ "$fails" = yes ]
+  if [ "$fails" = ✅ ]
   then
     if [[ "$rc" -eq 0 ]]
     then
@@ -46,12 +46,12 @@ for shell in bash zsh
 do
   pwd
   read -r -t0 && ignore_other_sdtin=$(cat)
-  #        choices           user fuzzy fails expected
-  run_test "hello"           h    yes   no    hello
-  run_test "hello\nbonjour"  b    yes   no    bonjour
-  run_test "hello\nBonjour"  b    yes   no    Bonjour
-  run_test "hello\nBonjour"  Bn   yes   no    Bonjour
-  run_test "hello\nBonjour"  Bn   no    yes   ""
-  run_test ""                test yes   no    test.sh
-  run_test ""                fs   yes   no    fsh
+  #  In: choices       In: user_input  In: fuzzy      Out: fails     Out: expected result
+  🧪 "hello"           h               ✅             🔳             hello
+  🧪 "hello\nbonjour"  b               ✅             🔳             bonjour
+  🧪 "hello\nBonjour"  b               ✅             🔳             Bonjour
+  🧪 "hello\nBonjour"  Bn              ✅             🔳             Bonjour
+  🧪 "hello\nBonjour"  Bn              🔳             ✅             ""
+  🧪 ""                test            ✅             🔳             test.sh
+  🧪 ""                fs              ✅             🔳             fsh
 done
