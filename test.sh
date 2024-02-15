@@ -14,9 +14,9 @@ fi
   echo "run shell=$shell choices=$choices user_input=$user_input expected_result=$expected_result result=$result"
   if [ -z "$choices" ]
   then
-    result="$(FSH_NO_FUZZY="$no_fuzzy" FSH_TEST_INPUT="$user_input" "$shell" ./fsh)"
+    result="$(FSH_NO_FUZZY="$no_fuzzy" FSH_TEST_INPUT="y$user_input" "$shell" ./fsh)"
   else
-    result="$(echo -e "$choices"| FSH_NO_FUZZY="$no_fuzzy" FSH_TEST_INPUT="$user_input" "$shell" ./fsh)"
+    result="$(echo -e "$choices"| FSH_NO_FUZZY="$no_fuzzy" FSH_TEST_INPUT="y$user_input" "$shell" ./fsh)"
   fi
   rc=$?
   if [ "$fails" = ✅ ]
@@ -41,17 +41,26 @@ fi
   fi
 }
 
+up="$(echo '\x1b')[A"
+down="$(echo '\x1b')[B"
+
 cd "$(dirname "$0")"
 for shell in bash zsh
 do
   pwd
   read -r -t0 && ignore_other_sdtin=$(cat)
-  #  In: choices       In: user_input  In: fuzzy      Out: fails     Out: expected result
-  🧪 "hello"           h               ✅             🔳             hello
-  🧪 "hello\nbonjour"  b               ✅             🔳             bonjour
-  🧪 "hello\nBonjour"  b               ✅             🔳             Bonjour
-  🧪 "hello\nBonjour"  Bn              ✅             🔳             Bonjour
-  🧪 "hello\nBonjour"  Bn              🔳             ✅             ""
-  🧪 ""                test            ✅             🔳             test.sh
-  🧪 ""                fs              ✅             🔳             fsh
+  #  In: choices       In: user_input                   In: fuzzy      Out: fails     Out: expected result
+  🧪 "hello"           h                                ✅             🔳             hello
+  🧪 "hello\nbonjour"  b                                ✅             🔳             bonjour
+  🧪 "hello\nBonjour"  b                                ✅             🔳             Bonjour
+  🧪 "hello\nBonjour"  Bn                               ✅             🔳             Bonjour
+  🧪 "hello\nBonjour"  Bn                               🔳             ✅             ""
+  🧪 ""                test                             ✅             🔳             test.sh
+  🧪 ""                fs                               ✅             🔳             fsh
+  🧪 "hello\nBonjour"  ""                               ✅             🔳             Bonjour
+  🧪 "hello\nBonjour"  "$up"                            ✅             🔳             hello
+  🧪 "1\n2\n3"         ""                               ✅             🔳             3
+  🧪 "1\n2\n3"         "$up"                            ✅             🔳             2
+  🧪 "1\n2\n3"         "$up$up"                         ✅             🔳             1
+  🧪 "1\n2\n3"         "$up$up$down"                    ✅             🔳             2
 done

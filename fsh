@@ -45,18 +45,20 @@ fsh() {
   read_key_test() {
     if [ "$key_test_i" -lt ${#FSH_TEST_INPUT} ]
     then
-      key="${FSH_TEST_INPUT:$key_test_i:1}"
+      out_key="${FSH_TEST_INPUT:$key_test_i:1}"
       key_test_i=$((key_test_i + 1))
     else
-      key=$'\n'
+      # shellcheck disable=SC2154,SC2034
+      out_key=$'\n'
     fi
+    eval "$1=\$out_key"
   }
 
   read_key() {
-    # the simulated user input given as a string, one character at a time. if set the script will not read from stdin
+    # the simulated user input given as a string, one character at a time. first character will be ignored. if set the script will not read from stdin
     if [ -n "${FSH_TEST_INPUT:=""}" ]
     then
-      read_key_test
+      read_key_test "$1"
     else
       read_key_nominal "$1"
     fi
@@ -274,8 +276,9 @@ fsh() {
     __start_selector_color=$(start_color "$selector_color")
     __start_select_color=$(start_color "$select_color")
     line_header=$(printf "\n%s│%s " "$__start_frame_color" "$__end_color")
-    key_test_i=0
+    key_test_i=1
     screenshot_n=0
+    key=""
     generate_choices_nums
   }
 

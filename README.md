@@ -84,7 +84,7 @@ Hallo, Welt!
  | FSH_FRAME_COLOR | the color of the frame | 30 |
  | FSH_PROMPT_COLOR | the color used for the prompt | 34 |
  | FSH_SELECT_COLOR | the color of the sign before the line currently selected  | 31 |
- | FSH_TEST_INPUT | the simulated user input given as a string, one character at a time. if set the script will not read from stdin | "" |
+ | FSH_TEST_INPUT | the simulated user input given as a string, one character at a time. first character will be ignored. if set the script will not read from stdin | "" |
  | FSH_HEADER | a name to display beofre the prompt to give context on what is expected | "" |
  | FSH_VIM_MODE | (not implemented) set this variable to support vim normal mode | "" |
  | FSH_PERF | if this variable is set, will display the time it took to draw the interface | "" |

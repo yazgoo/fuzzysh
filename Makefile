@@ -3,7 +3,7 @@ lint:
 	shellcheck -s bash $(SRC)
 test:
 	./test.sh
-doc:
+doc: fsh generate_readme.sh
 	./generate_readme.sh
 check_doc_up_to_date: doc
 	git diff --exit-code
