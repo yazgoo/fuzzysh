@@ -151,7 +151,7 @@ fsh() {
     for choice in "${new_choices_a[@]}"
     do
       cursor=" "$__end_color
-      [ $i -eq $item_n ] && cursor="${__start_select_color}>$__end_color$__start_selector_color"
+      [ "$i" -eq $item_n ] && cursor="${__start_select_color}>$__end_color$__start_selector_color"
       printf "%s%s%s %s %s %*c" "$line_header" "$__start_selector_color" "$cursor" "$choice" \
         "$__end_color" "$((columns - 6 - ${#choice}))" " "
       i=$((i - 1))
@@ -179,7 +179,7 @@ fsh() {
     start_line=$(( lines -  n_choices - 4))
     i=2
     end=$((start_line + 1))
-    while [ $i -lt $end ]
+    while [ "$i" -lt $end ]
     do
       move_cursor_to "$i" 2
       printf " %*.c" "$((columns - 6))" " "
@@ -221,7 +221,7 @@ fsh() {
     # a name to display beofre the prompt to give context on what is expected
     header="${FSH_HEADER:=""}"
     # (not implemented) set this variable to support vim normal mode
-    vim_mode="${FSH_VIM_MODE:=""}"
+    # vim_mode="${FSH_VIM_MODE:=""}"
     # if this variable is set, will display the time it took to draw the interface
     perf_mode="${FSH_PERF:=""}"
     get_choices

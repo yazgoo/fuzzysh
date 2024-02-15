@@ -6,8 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install zsh
-        run: sudo apt-get update; sudo apt-get install zsh
-      - name: Run script file
-        run: ${GITHUB_WORKSPACE}/test.sh
-        shell: bash
+      - name: Install packages
+        run: sudo apt-get update; sudo apt-get install zsh shellcheck make git
+      - name: Checks
+        run: make checks
