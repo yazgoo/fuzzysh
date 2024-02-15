@@ -49,18 +49,5 @@ for shell in bash zsh
 do
   pwd
   read -r -t0 && ignore_other_sdtin=$(cat)
-  #  In: choices       In: user_input                   In: fuzzy      Out: fails     Out: expected result
-  🧪 "hello"           h                                ✅             🔳             hello
-  🧪 "hello\nbonjour"  b                                ✅             🔳             bonjour
-  🧪 "hello\nBonjour"  b                                ✅             🔳             Bonjour
-  🧪 "hello\nBonjour"  Bn                               ✅             🔳             Bonjour
-  🧪 "hello\nBonjour"  Bn                               🔳             ✅             ""
-  🧪 ""                test                             ✅             🔳             test.sh
-  🧪 ""                fs                               ✅             🔳             fsh
-  🧪 "hello\nBonjour"  ""                               ✅             🔳             Bonjour
-  🧪 "hello\nBonjour"  "$up"                            ✅             🔳             hello
-  🧪 "1\n2\n3"         ""                               ✅             🔳             3
-  🧪 "1\n2\n3"         "$up"                            ✅             🔳             2
-  🧪 "1\n2\n3"         "$up$up"                         ✅             🔳             1
-  🧪 "1\n2\n3"         "$up$up$down"                    ✅             🔳             2
+  eval "$(cat tests)"
 done
