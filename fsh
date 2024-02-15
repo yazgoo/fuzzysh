@@ -26,6 +26,11 @@ fsh() {
       fi
     done
     n_choices=${#new_choices_a[@]}
+    display_n_choice="$n_choices"
+    [ ${#new_choices_a[@]} -eq 0 ] && display_n_choice=0
+    choices_quota="$display_n_choice/$total_n_choices"
+    separator_line_size=$((columns - 5 - ${#header} - ${#choices_quota}))
+    frame_inner_line="$(draw_frame_inner_line "$separator_line_size")"
   }
 
   read_key_nominal() {
@@ -87,6 +92,7 @@ fsh() {
     else
       fuzzy_filter="${fuzzy_filter}.*[${1,,}${1^^}]"
     fi
+    generate_choices_nums
   }
 
   filter_pop() {
@@ -96,6 +102,7 @@ fsh() {
     do
       fuzzy_filter="${fuzzy_filter%?}"
     done
+    generate_choices_nums
   }
 
   handle_key() {
@@ -174,6 +181,7 @@ fsh() {
   }
   
   print_choices() {
+    i="$((n_choices - 1))"
     for choice in "${new_choices_a[@]}"
     do
       cursor=" "$__end_color
@@ -185,37 +193,28 @@ fsh() {
   }
 
   print_two_last_text_lines() {
-    display_n_choice="$n_choices"
-    [ ${#new_choices_a[@]} -eq 0 ] && display_n_choice=0
-    choices_quota="$display_n_choice/$total_n_choices"
-    separator_line_size=$((columns - 5 - ${#header} - ${#choices_quota}))
-    printf "%s%s%s%s%s %s%s%s\n  %s>%s %s  %*c" "$line_header" "$__start_frame_color" "$choices_quota" \
-      "$__end_color" "$header" "$__start_frame_color" \
-      "$(draw_frame_inner_line "$separator_line_size")" "$__end_color" \
+    printf "%s%s%s%s%s %s%s%s\n  %s>%s %s  %*c" "$line_header" \
+      "$__start_frame_color" "$choices_quota" "$__end_color" \
+      "$header" \
+      "$__start_frame_color" "$frame_inner_line" "$__end_color" \
       "$__start_prompt_color" "$__end_color" \
       "$filter" "$((columns - 6 - ${#filter}))" " " 
   }
 
   print_text() {
-    i="$((n_choices - 1))"
     print_choices
-    print_two_last_text_lines
+    instrument print_two_last_text_lines
   }
 
   print_whitespaces_content() {
-    start_line=$(( lines -  n_choices - 4))
-    i=2
-    end=$((start_line + 1))
-    while [ "$i" -lt $end ]
+    for (( i=2 ; i < lines - n_choices -3 ; i++ ))
     do
       move_cursor_to "$i" 2
       printf " %*.c" "$((columns - 6))" " "
-      i=$((i + 1))
     done
   }
 
   draw_frame_content() {
-    generate_choices_nums
     print_whitespaces_content
     print_text
   }
@@ -269,6 +268,7 @@ fsh() {
     line_header=$(printf "\n%s│%s " "$__start_frame_color" "$__end_color")
     key_test_i=0
     screenshot_n=0
+    generate_choices_nums
   }
 
   instrument() {
