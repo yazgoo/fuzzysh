@@ -1,3 +1,5 @@
+#!/bin/env bash
+
 fsh() {
   # https://github.com/yazgoo/fuzzysh/
 
