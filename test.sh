@@ -22,6 +22,7 @@ cd "$(dirname "$0")"
 for shell in bash zsh
 do
   pwd
+  ignore_other_sdtin=$(cat)
   choices="hello"          user_input=h    expected_result=hello              run_test
   choices="hello\nbonjour" user_input=b    expected_result=bonjour            run_test
   choices="hello\nBonjour" user_input=b    expected_result=Bonjour            run_test
