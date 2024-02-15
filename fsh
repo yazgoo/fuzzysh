@@ -13,14 +13,14 @@ fsh() {
   }
 
   remove_ansi_escape_codes() {
-    sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 
+    sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 
   }
 
   generate_choices_nums() {
     new_choices_a=()
     for choice in "${choices_a[@]}"
     do
-      if [[ "$choice" =~ $fuzzy_filter ]]
+      if [[ -z "$filter" ]] || [[ "$choice" =~ $fuzzy_filter ]]
       then
         new_choices_a+=("$choice")
       fi
@@ -133,19 +133,43 @@ fsh() {
     printf "\e[0m"
   }
 
-  draw_frame() {
+  draw_frame_inner_line() {
+    for (( i = 0; i < $1; i++ ))
+    do
+      printf "─"
+    done
+  }
+
+  draw_frame_top() {
     move_cursor_to 0 0
-    start_color "$frame_color"
-    printf "┌%s┐" "$(printf '─%.0s' $(seq 1 $((columns - 2))))"
-    for i in $(seq 2 $((lines - 1)))
+    printf "┌"
+    draw_frame_inner_line "$line_length"
+    printf "┐"
+  }
+
+  draw_frame_bottom() {
+    move_cursor_to "$lines" 0
+    printf "└"
+    draw_frame_inner_line "$line_length"
+    printf "┘"
+  }
+
+  draw_frame_vertical_borders() {
+    for (( i = 2; i < lines; i++ ))
     do
       move_cursor_to "$i" 0
       printf "│"
       move_cursor_to "$i" "$columns"
       printf "│"
     done
-    move_cursor_to "$lines" 0
-    printf "└%s┘" "$(printf '─%.0s' $(seq 1 $((columns - 2))))"
+  }
+
+  draw_frame() {
+    line_length=$((columns - 2))
+    start_color "$frame_color"
+    draw_frame_top
+    draw_frame_vertical_borders
+    draw_frame_bottom
     end_color
   }
   
@@ -164,9 +188,10 @@ fsh() {
     display_n_choice="$n_choices"
     [ ${#new_choices_a[@]} -eq 0 ] && display_n_choice=0
     choices_quota="$display_n_choice/$total_n_choices"
+    separator_line_size=$((columns - 5 - ${#header} - ${#choices_quota}))
     printf "%s%s%s%s%s %s%s%s\n  %s>%s %s  %*c" "$line_header" "$__start_frame_color" "$choices_quota" \
       "$__end_color" "$header" "$__start_frame_color" \
-      "$(printf "─%.0s" $(seq 1 $((columns - 5 - ${#header} - ${#choices_quota}))))" "$__end_color" \
+      "$(draw_frame_inner_line "$separator_line_size")" "$__end_color" \
       "$__start_prompt_color" "$__end_color" \
       "$filter" "$((columns - 6 - ${#filter}))" " " 
   }
@@ -205,7 +230,7 @@ fsh() {
     fi
     if [ -z "$choices" ]
     then
-      choices=$(find . -not -path '*/.*' | sed 's,^./,,')
+      choices=$(find . ! -path '*/.*' | sed 's,^./,,')
     fi
     if [ "$terminal" = "zsh" ]
     then
@@ -255,7 +280,6 @@ fsh() {
 
   draw() {
     draw_frame_content
-    draw_frame
     move_cursor_to "$lines" 2
     [ -n "$perf_mode" ] && printf "%sms" "$delta_time"
   }
@@ -268,9 +292,10 @@ fsh() {
 
   run() {
     clear >&2
+    draw_frame >&2
     while $running
     do
-      instrument draw >&2
+      draw >&2
       # if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end
       [ -n "${FSH_SCREENSHOT:=""}" ] && write_screenshot
       handle_key >/dev/null 2>&1
@@ -289,7 +314,7 @@ fsh() {
     rmcup
     [ -n "$FSH_SCREENSHOT" ] && generate_animation
     if [ -n "$result" ]; then
-      echo "$result"
+       printf "%s\n" "$result"
     else
       false
     fi
