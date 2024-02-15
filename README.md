@@ -1,10 +1,13 @@
 
+
 <table>
 <tr>
 
 <td>
 
 Minimalist selector in shell, à la [fzf](https://github.com/junegunn/fzf)
+
+[![test](https://github.com/yazgoo/fuzzysh/actions/workflows/test.yml/badge.svg)](https://github.com/yazgoo/fuzzysh/actions/workflows/test.yml)
 
 ## what's it for ?
 
