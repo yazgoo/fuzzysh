@@ -199,23 +199,24 @@ fsh() {
       cursor=" "$__end_color
       [ "$i" -eq $item_n ] && cursor="${__start_select_color}>$__end_color$__start_selector_color"
       printf "%s%s%s %s %s %*c" "$line_header" "$__start_selector_color" "$cursor" "$choice" \
-        "$__end_color" "$((columns - 6 - ${#choice}))" " "
+        "$__end_color" "$((columns - 7 - ${#choice}))" " "
       i=$((i - 1))
     done
   }
 
   print_two_last_text_lines() {
-    printf "%s%s%s%s%s %s%s%s\n  %s>%s %s  %*c" "$line_header" \
+    printf "%s%s%s%s%s %s%s%s\n%s│%s  %s>%s %s  %*c" "$line_header" \
       "$__start_frame_color" "$choices_quota" "$__end_color" \
       "$header" \
       "$__start_frame_color" "$frame_inner_line" "$__end_color" \
+      "$__start_frame_color" "$__end_color" \
       "$__start_prompt_color" "$__end_color" \
-      "$filter" "$((columns - 6 - ${#filter}))" " " 
+      "$filter" "$((columns - 8 - ${#filter}))" " " 
   }
 
   print_text() {
     print_choices
-    instrument print_two_last_text_lines
+    print_two_last_text_lines
   }
 
   print_whitespaces_content() {
@@ -308,7 +309,7 @@ fsh() {
     draw_frame >&2
     while $running
     do
-      draw >&2
+      instrument draw >&2
       # if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end
       [ -n "${FSH_SCREENSHOT:=""}" ] && write_screenshot
       handle_key >/dev/null 2>&1
