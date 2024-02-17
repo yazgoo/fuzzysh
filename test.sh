@@ -51,3 +51,6 @@ do
   read -r -t0 && ignore_other_sdtin=$(cat)
   eval "$(cat tests)"
 done
+
+echo "test" | FSH_TEST_INPUT=y COLUMNS=15 LINES=10 ./fsh 2> /tmp/lol
+diff <(cat /tmp/lol  | ./terminal_emulator_render.rb 10 15) test0.render

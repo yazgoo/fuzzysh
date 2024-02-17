@@ -160,14 +160,14 @@ fsh() {
   }
 
   draw_frame_top() {
-    move_cursor_to 0 0
+    move_cursor_to 1 1
     printf "┌"
     draw_frame_inner_line "$line_length"
     printf "┐"
   }
 
   draw_frame_bottom() {
-    move_cursor_to "$lines" 0
+    move_cursor_to "$lines" 1
     printf "└"
     draw_frame_inner_line "$line_length"
     printf "┘"
@@ -176,7 +176,7 @@ fsh() {
   draw_frame_vertical_borders() {
     for (( i = 2; i < lines; i++ ))
     do
-      move_cursor_to "$i" 0
+      move_cursor_to "$i" 1
       printf "│"
       move_cursor_to "$i" "$columns"
       printf "│"
