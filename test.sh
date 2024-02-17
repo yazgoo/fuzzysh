@@ -13,7 +13,7 @@ fi
   expected_result="$5"
   expected_stderr="$6"
   echo "run shell=$shell choices=$choices user_input=$user_input expected_result=$expected_result result=$result"
-  tmp_out=/tmp/lol
+  tmp_out="$(mktemp)"
   export FSH_COLUMNS=15
   export FSH_LINES=10
   if [ -z "$choices" ]
