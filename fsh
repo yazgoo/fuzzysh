@@ -304,8 +304,12 @@ fsh() {
     import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$screenshot_n")" >/dev/null 2>&1
   }
 
+  do_clear()  {
+    printf "\e[2J"
+  }
+
   run() {
-    clear >&2
+    do_clear >&2
     draw_frame >&2
     while $running
     do
