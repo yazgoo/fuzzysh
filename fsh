@@ -15,7 +15,7 @@ fsh() {
   }
 
   remove_ansi_escape_codes() {
-    sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g"
+    sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 2>/dev/null
   }
 
   generate_choices_nums() {
@@ -271,8 +271,10 @@ fsh() {
     result=""
     running=true
     item_n=0
-    lines=$(tput lines)
-    columns=$(tput cols)
+    # the height of the terminal (used for testing, otherwise will be set by tput)
+    lines="${FSH_LINES:=$(tput lines 2>/dev/null)}"
+    # the width of the terminal (used for testing, otherwise will be set by tput)
+    columns="${FSH_COLUMNS:=$(tput cols 2>/dev/null)}"
     __end_color=$(end_color)
     __start_frame_color=$(start_color "$frame_color")
     __start_prompt_color=$(start_color "$prompt_color")
@@ -304,8 +306,12 @@ fsh() {
     import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$screenshot_n")" >/dev/null 2>&1
   }
 
+  do_clear()  {
+    printf "\e[2J"
+  }
+
   run() {
-    clear >&2
+    do_clear >&2
     draw_frame >&2
     while $running
     do
