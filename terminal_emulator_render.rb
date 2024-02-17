@@ -2,10 +2,41 @@
 
 class Terminal
 
+  class Char
+    attr_accessor :fg_color, :bg_color
+
+    def initialize(char)
+      @char = char
+      @fg_color = 0
+      @bg_color = 0
+    end
+
+    def to_s
+      #"\e[#{@fg_color + 30}m#{@char}\e[0m"
+      @char
+    end
+  end
+
   def interprete_escape_sequence(command, args)
     if command == "H"
       @row = args.split(";")[0].to_i
       @col = args.split(";")[1].to_i
+    elsif command == "J"
+      @buffer.each do |row|
+        row.map! { |col| Char.new(" ") }
+      end
+    elsif command == "m"
+      args.split(";").each do |arg|
+        case arg.to_i
+        when 0
+        when 1
+          @buffer[@row - 1][@col - 1].fg_color = 1
+        when 30..37
+          @buffer[@row - 1][@col - 1].fg_color = arg.to_i - 30
+        when 40..47
+          # @bg_color = arg.to_i - 40
+        end
+      end
     end
   end
 
@@ -29,7 +60,7 @@ class Terminal
     @buffer = Array.new(@rows) { Array.new(@cols) }
     # initialize buffer with spaces
     @buffer.each do |row|
-      row.map! { |col| " " }
+      row.map! { |col| Char.new(" ") }
     end
     @row = 1
     @col = 1
@@ -46,7 +77,7 @@ class Terminal
       elsif chars[i].ord == 15
         @col = 1
       else
-        @buffer[@row - 1][@col - 1] = chars[i]
+        @buffer[@row - 1][@col - 1] = Char.new(chars[i])
         @col += 1
         if @col > @cols
           @col = 1
@@ -58,7 +89,7 @@ class Terminal
   end
 
   def to_s
-    @buffer.map { |row| row.join }.join("\n")
+    @buffer.map { |row| row.map { |c| c.to_s }.join }.join("\n")
   end
 
 end
