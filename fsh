@@ -15,7 +15,7 @@ fsh() {
   }
 
   remove_ansi_escape_codes() {
-    sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 
+    sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 2>/dev/null
   }
 
   generate_choices_nums() {
