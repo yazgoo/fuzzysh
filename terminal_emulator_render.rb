@@ -14,7 +14,7 @@ class Terminal
     if chars[i] == "["
       command=""
       i += 1
-      while not ["h", "l", "m", "H"].include?(chars[i])
+      while not ["h", "l", "m", "H", "J"].include?(chars[i])
         command += chars[i]
         i += 1
       end
