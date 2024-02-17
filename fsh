@@ -10,12 +10,12 @@ fsh() {
     frame_color=${FSH_FRAME_COLOR:=30}
     # the color used for the prompt
     prompt_color=${FSH_PROMPT_COLOR:=34}
-    # the color of the sign before the line currently selected 
+    # the color of the sign before the line currently selected
     select_color=${FSH_SELECT_COLOR:=31}
   }
 
   remove_ansi_escape_codes() {
-    sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" 
+    sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g"
   }
 
   generate_choices_nums() {
@@ -191,7 +191,7 @@ fsh() {
     draw_frame_bottom
     end_color
   }
-  
+
   print_choices() {
     i="$((n_choices - 1))"
     for choice in "${new_choices_a[@]}"
@@ -211,7 +211,7 @@ fsh() {
       "$__start_frame_color" "$frame_inner_line" "$__end_color" \
       "$__start_frame_color" "$__end_color" \
       "$__start_prompt_color" "$__end_color" \
-      "$filter" "$((columns - 8 - ${#filter}))" " " 
+      "$filter" "$((columns - 8 - ${#filter}))" " "
   }
 
   print_text() {
@@ -255,7 +255,7 @@ fsh() {
   }
 
   init() {
-    terminal="$(ps -p $$ -o comm=)"
+    [ -n "$ZSH_VERSION" ] && terminal="zsh" || terminal="bash"
     setup_theme
     # a name to display beofre the prompt to give context on what is expected
     header="${FSH_HEADER:=""}"
