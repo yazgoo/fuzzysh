@@ -233,10 +233,7 @@ fsh() {
   }
 
   get_choices() {
-    if [ "$terminal" = zsh ] && [ ! -t 0 ]
-    then
-      choices=$(cat </dev/stdin)
-    elif [ "$terminal" != zsh ] && read -r -t0
+    if [ ! -t 0 ]
     then
       choices=$(cat </dev/stdin)
     fi
