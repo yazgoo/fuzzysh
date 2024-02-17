@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+require 'optparse'
+require 'socket'
 
 class Terminal
 
@@ -17,7 +19,8 @@ class Terminal
     end
   end
 
-  def interprete_escape_sequence(command, args)
+  def interprete_escape_sequence(command, args, passthrough)
+    STDOUT.printf "\e[#{args}#{command}" if passthrough
     if command == "H"
       @row = args.split(";")[0].to_i
       @col = args.split(";")[1].to_i
@@ -40,23 +43,24 @@ class Terminal
     end
   end
 
-  def read_escape_sequence(chars, i)
-    i += 1
-    if chars[i] == "["
-      command=""
-      i += 1
-      while not ["h", "l", "m", "H", "J"].include?(chars[i])
-        command += chars[i]
-        i += 1
+  def read_escape_sequence(file, passthrough)
+    if file.read(1) == "["
+      chars = ""
+      char = ""
+      while file.eof? == false
+        char = file.read(1)
+        break if ["h", "l", "m", "H", "J"].include?(char)
+        chars += char
       end
-      interprete_escape_sequence(chars[i], command)
+      interprete_escape_sequence(char, chars, passthrough)
+    else
+      exit 1
     end
-    return i
   end
   
-  def initialize
-    @rows = ARGV[0].to_i
-    @cols = ARGV[1].to_i
+  def initialize rows, cols
+    @rows = rows
+    @cols = cols
     @buffer = Array.new(@rows) { Array.new(@cols) }
     # initialize buffer with spaces
     @buffer.each do |row|
@@ -66,25 +70,38 @@ class Terminal
     @col = 1
   end
 
-  def run(chars)
-    i = 0
-    while i < chars.size
-      if chars[i].ord == 27
-        i = read_escape_sequence(chars, i)
-      elsif chars[i].ord == 10
+  def run(file, passthrough=true)
+    while file.eof? == false
+      char = file.getc
+      if char.ord == 27
+        read_escape_sequence(file, passthrough)
+      elsif char.ord == 10
         @row += 1
         @col = 1
-      elsif chars[i].ord == 15
+        STDOUT.puts if passthrough
+      elsif char.ord == 15
         @col = 1
       else
-        @buffer[@row - 1][@col - 1] = Char.new(chars[i])
+        STDOUT.write char if passthrough
+        @buffer[@row - 1][@col - 1] = Char.new(char)
         @col += 1
         if @col > @cols
           @col = 1
           @row += 1
         end
       end
-      i += 1
+    end
+  end
+
+  def server(port)
+    Thread.start do
+      server = TCPServer.new port
+      loop do
+        Thread.start(server.accept) do |client|
+          client.puts "#{to_s}"
+          client.close
+        end
+      end
     end
   end
 
@@ -94,6 +111,32 @@ class Terminal
 
 end
 
-t = Terminal.new
-t.run(STDIN.each_char.to_a)
-puts t.to_s
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: [options]"
+
+  opts.on("-p", "--passthrough", "Directly output stdin to stdout") do |v|
+    options[:passthrough] = v
+  end
+
+  opts.on("-r", "--rows ROWS", "Number of rows") do |v|
+    options[:rows] = v.to_i
+  end
+
+  opts.on("-c", "--cols COLS", "Number of columns") do |v|
+    options[:cols] = v.to_i
+  end
+
+  opts.on("-f", "--final", "put final buffer state to stdout") do |v|
+    options[:final] = v
+  end
+
+  opts.on("-P", "--port PORT", "Port to listen on") do |v|
+    options[:port] = v.to_i
+  end
+end.parse!
+
+t = Terminal.new(options[:rows], options[:cols])
+t.server(options[:port]) if options.key?(:port)
+t.run(STDIN, options[:passthrough])
+puts t.to_s if options[:final]
