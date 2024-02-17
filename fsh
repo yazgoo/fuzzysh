@@ -271,8 +271,8 @@ fsh() {
     result=""
     running=true
     item_n=0
-    lines="${LINES:=$(tput lines)}"
-    columns="${COLUMNS:=$(tput cols)}"
+    lines="${LINES:=$(tput lines 2>/dev/null)}"
+    columns="${COLUMNS:=$(tput cols 2>/dev/null)}"
     __end_color=$(end_color)
     __start_frame_color=$(start_color "$frame_color")
     __start_prompt_color=$(start_color "$prompt_color")
