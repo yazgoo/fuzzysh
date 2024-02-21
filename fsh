@@ -198,8 +198,9 @@ fsh() {
     do
       cursor=" "$__end_color
       [ "$i" -eq $item_n ] && cursor="${__start_select_color}>$__end_color$__start_selector_color"
-      printf "%s%s%s %s %s %*c" "$line_header" "$__start_selector_color" "$cursor" "$choice" \
-        "$__end_color" "$((columns - 7 - ${#choice}))" " "
+      choice_displayed="${choice:0:$((columns - 8))}"
+      printf "%s%s%s %s %s %*c" "$line_header" "$__start_selector_color" "$cursor" "$choice_displayed" \
+        "$__end_color" "$((columns - 7 - ${#choice_displayed}))" " "
       i=$((i - 1))
     done
   }
