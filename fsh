@@ -269,10 +269,12 @@ fsh() {
     result=""
     running=true
     item_n=0
+    t_lines=$(tput lines) 2>/dev/null
+    t_cols=$(tput cols) 2>/dev/null
     # the height of the terminal (used for testing, otherwise will be set by tput)
-    lines="${FSH_LINES:=$(tput lines 2>/dev/null)}"
+    lines="${FSH_LINES:=$t_lines}"
     # the width of the terminal (used for testing, otherwise will be set by tput)
-    columns="${FSH_COLUMNS:=$(tput cols 2>/dev/null)}"
+    columns="${FSH_COLUMNS:=$t_cols}"
     __end_color=$(end_color)
     __start_frame_color=$(start_color "$frame_color")
     __start_prompt_color=$(start_color "$prompt_color")
