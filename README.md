@@ -89,8 +89,8 @@ Hallo, Welt!
  | FSH_VIM_MODE | (not implemented) set this variable to support vim normal mode | "" |
  | FSH_PERF | if this variable is set, will display the time it took to draw the interface | "" |
  | FSH_NO_FUZZY | if this variable is set, will not use fuzzy search, instead will do a pattern match | "" |
- | FSH_LINES | the height of the terminal (used for testing, otherwise will be set by tput) | $(tput lines 2>/dev/null) |
- | FSH_COLUMNS | the width of the terminal (used for testing, otherwise will be set by tput) | $(tput cols 2>/dev/null) |
+ | FSH_LINES | the height of the terminal (used for testing, otherwise will be set by tput) | $t_lines |
+ | FSH_COLUMNS | the width of the terminal (used for testing, otherwise will be set by tput) | $t_cols |
  | FSH_SCREENSHOT | if this variable is set, will write a screenshot of the terminal at each iteration and generate an animation at the end | "" |
 
 </details>
