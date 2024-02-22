@@ -1,11 +1,5 @@
 cat <<'EOT' > README.md
 
-
-<table>
-<tr>
-
-<td>
-
 Minimalist selector in shell, à la [fzf](https://github.com/junegunn/fzf)
 
 [![test](https://github.com/yazgoo/fuzzysh/actions/workflows/test.yml/badge.svg)](https://github.com/yazgoo/fuzzysh/actions/workflows/test.yml)
@@ -20,16 +14,7 @@ You need to:
 
 **Just copy the [fsh](fsh) function in your script.**
 
-</td>
-
-<td>
-
 [![screenshot](doc/animation_small.gif)](doc/animation.gif)
-
-</td>
-
-</tr>
-</table>
 
 ## usage example
 
