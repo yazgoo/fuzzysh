@@ -196,21 +196,31 @@ fsh() {
     i="$((n_choices - 1))"
     for choice in "${new_choices_a[@]}"
     do
+      if [ "$i" -gt "$((lines - 5))" ]
+      then
+        i=$((i - 1))
+        continue
+      fi
+      move_cursor_to "$current_line" 3
       cursor=" "$__end_color
       [ "$i" -eq $item_n ] && cursor="${__start_select_color}>$__end_color$__start_selector_color"
       choice_displayed="${choice:0:$((columns - 8))}"
-      printf "%s%s%s %s %s %*c" "$line_header" "$__start_selector_color" "$cursor" "$choice_displayed" \
+      printf "%s%s %s %s %*c" "$__start_selector_color" "$cursor" "$choice_displayed" \
         "$__end_color" "$((columns - 7 - ${#choice_displayed}))" " "
       i=$((i - 1))
+      current_line=$((current_line + 1))
     done
   }
 
   print_two_last_text_lines() {
-    printf "%s%s%s%s%s %s%s%s\n%s│%s  %s>%s %s  %*c" "$line_header" \
+    move_cursor_to "$current_line" 2
+    printf " %s%s%s%s %s%s%s" \
       "$__start_frame_color" "$choices_quota" "$__end_color" \
       "$header" \
-      "$__start_frame_color" "$frame_inner_line" "$__end_color" \
-      "$__start_frame_color" "$__end_color" \
+      "$__start_frame_color" "$frame_inner_line" "$__end_color"
+
+    move_cursor_to "$((current_line + 1))" 2
+    printf " %s>%s %s  %*c" \
       "$__start_prompt_color" "$__end_color" \
       "$filter" "$((columns - 8 - ${#filter}))" " "
   }
@@ -221,14 +231,17 @@ fsh() {
   }
 
   print_whitespaces_content() {
-    for (( i=2 ; i < lines - n_choices -3 ; i++ ))
+    choices_max=$((lines - n_choices - 2))
+    for (( ; current_line < choices_max  ; current_line++ ))
     do
-      move_cursor_to "$i" 2
+      move_cursor_to "$current_line" 2
       printf " %*.c" "$((columns - 6))" " "
     done
   }
 
   draw_frame_content() {
+    current_line=2
+    move_cursor_to "$current_line" 2
     print_whitespaces_content
     print_text
   }
@@ -280,7 +293,6 @@ fsh() {
     __start_prompt_color=$(start_color "$prompt_color")
     __start_selector_color=$(start_color "$selector_color")
     __start_select_color=$(start_color "$select_color")
-    line_header=$(printf "\n%s│%s " "$__start_frame_color" "$__end_color")
     key_test_i=1
     screenshot_n=0
     key=""

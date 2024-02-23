@@ -45,11 +45,17 @@ fi
   fi
   if [ -n "$expected_stderr" ]
   then
-    diff <(cat "$tmp_out"  | ./terminal_emulator_render.rb -r "$FSH_LINES" -c "$FSH_COLUMNS" -f) "$expected_stderr"
+    actual_stderr="$(mktemp)"
+    cat "$tmp_out"  | ./terminal_emulator_render.rb -r "$FSH_LINES" -c "$FSH_COLUMNS" -f > "$actual_stderr"
+    diff "$actual_stderr" "$expected_stderr"
     if [[ "$?" -ne 0 ]]
     then
+      echo "expected:"
+      cat "$expected_stderr"
+      echo "got:"
+      cat "$actual_stderr"
       echo "wrong stderr (expected $expected_stderr)"
-      return 1
+      exit 1
     fi
   fi
 }
