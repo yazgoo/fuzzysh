@@ -1,13 +1,13 @@
 SRC=fsh
 lint:
 	shellcheck -s bash $(SRC)
-test:
-	./test.sh
-doc: fsh generate_readme.sh
-	./generate_readme.sh
+tst:
+	test/test.sh
+doc: fsh doc/generate_readme.sh
+	doc/generate_readme.sh
 check_doc_up_to_date: doc
 	git diff --exit-code
-checks: lint check_doc_up_to_date test
+checks: lint check_doc_up_to_date tst
 	echo "All checks passed 🎉"
 install_hooks:
 	git config core.hooksPath .git/hooks
