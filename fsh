@@ -87,20 +87,35 @@ fsh() {
     running=false
   }
 
+  filter_append_fuzzy() {
+    if [ "$terminal" = zsh ]
+    then
+      lower="${1:l}"
+      upper="${1:u}"
+    else
+      lower="${1,,}"
+      upper="${1^^}"
+    fi
+    [ "$1" = "$upper" ] && lower="$upper"
+    fuzzy_filter="${fuzzy_filter}.*[$lower$upper]"
+  }
+
   filter_append() {
     filter="${filter}${1}"
     if [ -n "$no_fuzzy" ]
     then
       fuzzy_filter="${filter}"
     else
-      if [ "$terminal" = zsh ]
-      then
-        fuzzy_filter="${fuzzy_filter}.*[${1:l}${1:u}]"
-      else
-        fuzzy_filter="${fuzzy_filter}.*[${1,,}${1^^}]"
-      fi
+      filter_append_fuzzy "$1"
     fi
     generate_choices_nums
+  }
+
+  filter_pop_fuzzy() {
+    for _ in {1..6}
+    do
+      fuzzy_filter="${fuzzy_filter%?}"
+    done
   }
 
   filter_pop() {
@@ -109,10 +124,7 @@ fsh() {
     then
       fuzzy_filter="${filter}"
     else
-      for _ in {1..6}
-      do
-        fuzzy_filter="${fuzzy_filter%?}"
-      done
+      filter_pop_fuzzy
     fi
     generate_choices_nums
   }
