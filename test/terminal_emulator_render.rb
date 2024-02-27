@@ -60,12 +60,20 @@ class Terminal
       n / 10 == 3 ? "color: #{ansi_to_css(n - 30)};" : 
         n / 10 == 4 ? "background-color: #{ansi_to_css(n - 40)};" : ""
     end
+
+    def to_svg
+      n = @color.sub("1;", "").to_i
+      n / 10 == 3 ? "stroke=\"#{ansi_to_css(n - 30)}\"" : 
+        n / 10 == 4 ? "fill=\"#{ansi_to_css(n - 40)}\"" : ""
+    end
   end
 
 
   class Termel
 
-    def initialize
+    def initialize(col, row)
+      @col = col.to_i
+      @row = row.to_i
       @char = Char.new(" ")
       @color = Color.new("0")
     end
@@ -77,6 +85,10 @@ class Terminal
 
     def set_color(color)
       @color = Color.new(color)
+    end
+
+    def to_svg
+      "<text x=\"#{@col * 8}\" y=\"#{@row * 12}\" #{@color.to_svg} style=\"font-family: monospace;\">#{@char}</text>\n"
     end
 
     def to_html
@@ -98,7 +110,12 @@ class Terminal
       @row = args.split(";")[0].to_i
       @col = args.split(";")[1].to_i
     elsif command == "J"
-      @buffer.each { |row| row.map! { |col| Termel.new } }
+      @buffer.each_with_index do |row, r| 
+        c = 0
+        row.map! { |col| 
+          c += 1
+          Termel.new(c, r + 1) } 
+      end
     elsif command == "m"
       @color = args
       @buffer[@row - 1][@col - 1].set_color(@color)
@@ -133,8 +150,9 @@ class Terminal
     @cols = cols
     @buffer = Array.new(@rows) { Array.new(@cols) }
     # initialize buffer with spaces
-    @buffer.each do |row|
-      row.map! { |col| Termel.new }
+    @buffer.each_with_index do |row, r|
+      c = 0
+      row.map! { |col| c += 1; Termel.new(c, r + 1) }
     end
     @row = 1
     @col = 1
@@ -171,6 +189,8 @@ class Terminal
           mode = client.gets
           if mode.chomp == "html"
             client.puts "#{to_html}"
+          elsif mode.chomp == "svg"
+            client.puts "#{to_svg}"
           elsif mode.chomp == "ansi"
             client.puts "#{to_ansi}"
           else
@@ -181,6 +201,12 @@ class Terminal
       end
     end
   end
+
+  def to_svg
+    buffer = @buffer.map { |row| row.map { |c| c.to_svg }.join }.join
+    "<svg width=\"#{(@cols + 1) * 8}\" height=\"#{(@rows + 1) * 12}\" xmlns=\"http://www.w3.org/2000/svg\">\n#{buffer}\n</svg>"
+  end
+
 
   def to_html
     @buffer.map { |row| row.map { |c| c.to_html }.join }.join("<br/>")
