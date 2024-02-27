@@ -201,7 +201,6 @@ fsh() {
     draw_frame_top
     draw_frame_vertical_borders
     draw_frame_bottom
-    end_color
   }
 
   print_choices() {

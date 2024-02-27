@@ -5,17 +5,90 @@ require 'socket'
 class Terminal
 
   class Char
-    attr_accessor :fg_color, :bg_color
-
     def initialize(char)
       @char = char
-      @fg_color = 0
-      @bg_color = 0
+    end
+    def to_s
+      @char
+    end
+    def to_html
+      case @char
+      when " "
+        "&nbsp;"
+      when "<"
+        "&lt;"
+      when ">"
+        "&gt;"
+      else
+        @char
+      end
+    end
+  end
+
+  class Color
+    def initialize(color)
+      @color = color
+    end
+    def to_s
+      "\e[#{@color}m"
+    end
+    def ansi_to_css(n)
+      case n
+      when 0
+        "black"
+      when 1
+        "red"
+      when 2
+        "green"
+      when 3
+        "yellow"
+      when 4
+        "blue"
+      when 5
+        "magenta"
+      when 6
+        "cyan"
+      when 7
+        "white"
+      else
+        "black"
+      end
+    end
+
+    def to_css
+      n = @color.sub("1;", "").to_i
+      n / 10 == 3 ? "color: #{ansi_to_css(n - 30)};" : 
+        n / 10 == 4 ? "background-color: #{ansi_to_css(n - 40)};" : ""
+    end
+  end
+
+
+  class Termel
+
+    def initialize
+      @char = Char.new(" ")
+      @color = Color.new("0")
+    end
+
+    def set(char, color)
+      @char = Char.new(char)
+      @color = Color.new(color)
+    end
+
+    def set_color(color)
+      @color = Color.new(color)
+    end
+
+    def to_html
+      "<span style=\"letter-spacing: 0; line-height: 1.25em; font-family: monospace; #{@color.to_css}\">#{@char.to_html}</span>"
+    end
+
+    def to_ansi
+      "#{@color}#{@char}#{Color.new(0)}"
     end
 
     def to_s
-      #"\e[#{@fg_color + 30}m#{@char}\e[0m"
-      @char
+      @char.to_s
     end
   end
 
@@ -25,21 +98,17 @@ class Terminal
       @row = args.split(";")[0].to_i
       @col = args.split(";")[1].to_i
     elsif command == "J"
-      @buffer.each do |row|
-        row.map! { |col| Char.new(" ") }
-      end
+      @buffer.each { |row| row.map! { |col| Termel.new } }
     elsif command == "m"
-      args.split(";").each do |arg|
-        case arg.to_i
-        when 0
-        when 1
-          @buffer[@row - 1][@col - 1].fg_color = 1
-        when 30..37
-          @buffer[@row - 1][@col - 1].fg_color = arg.to_i - 30
-        when 40..47
-          # @bg_color = arg.to_i - 40
-        end
-      end
+      @color = args
+      @buffer[@row - 1][@col - 1].set_color(@color)
+    elsif command == "h"
+      # ignore
+    elsif command == "l"
+      # ignore
+    else
+      puts "Unknown escape sequence: #{command}"
+      exit 1
     end
   end
 
@@ -59,12 +128,13 @@ class Terminal
   end
   
   def initialize rows, cols
+    @color = 1
     @rows = rows
     @cols = cols
     @buffer = Array.new(@rows) { Array.new(@cols) }
     # initialize buffer with spaces
     @buffer.each do |row|
-      row.map! { |col| Char.new(" ") }
+      row.map! { |col| Termel.new }
     end
     @row = 1
     @col = 1
@@ -83,7 +153,7 @@ class Terminal
         @col = 1
       else
         STDOUT.write char if passthrough
-        @buffer[@row - 1][@col - 1] = Char.new(char)
+        @buffer[@row - 1][@col - 1].set(char, @color)
         @col += 1
         if @col > @cols
           @col = 1
@@ -98,11 +168,26 @@ class Terminal
       server = TCPServer.new port
       loop do
         Thread.start(server.accept) do |client|
-          client.puts "#{to_s}"
+          mode = client.gets
+          if mode.chomp == "html"
+            client.puts "#{to_html}"
+          elsif mode.chomp == "ansi"
+            client.puts "#{to_ansi}"
+          else
+            client.puts "#{to_s}"
+          end
           client.close
         end
       end
     end
+  end
+
+  def to_html
+    @buffer.map { |row| row.map { |c| c.to_html }.join }.join("<br/>")
+  end
+
+  def to_ansi
+    @buffer.map { |row| row.map { |c| c.to_ansi }.join }.join("\n")
   end
 
   def to_s
