@@ -326,7 +326,9 @@ fsh() {
   write_screenshot() {
     mkdir -p _screenshot
     screenshot_n=$((screenshot_n + 1))
-    import -window "$WINDOWID" "$(printf "_screenshot/screenshot.%00d.jpg" "$screenshot_n")" >/dev/null 2>&1
+    svg="$(printf "_screenshot/screenshot.%00d.svg" "$screenshot_n")"
+    echo svg | nc -v localhost 4242 > "$svg" 2>/dev/null
+    convert "$svg" "$(printf "_screenshot/screenshot.%00d.jpg" "$screenshot_n")" >/dev/null 2>&1
   }
 
   do_clear()  {
