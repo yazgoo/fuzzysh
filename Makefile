@@ -17,4 +17,4 @@ add_hooks:
 format:
 	shfmt -w -i 2 $(SRC)
 animation:
-	rm -f _screenshot/*; FSH_SCREENSHOT=1 ./fsh 2>&1 |test/terminal_emulator_render.rb -r $$LINES -c $$COLUMNS -P 4242 -p
+	doc/animation.sh

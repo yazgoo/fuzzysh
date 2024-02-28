@@ -323,10 +323,26 @@ fsh() {
     [ -n "$perf_mode" ] && printf "%sms" "$delta_time"
   }
 
+  wait_for_screenshot_server() {
+    for (( i = 0; i < 3; i++ ))
+    do
+      if echo | nc -v localhost 4242 >/dev/null 2>&1
+      then
+        break
+      elif [ "$i" -eq 2 ]
+      then
+        echo "could not connect to the screenshot server"
+        exit 1
+      fi
+      sleep 0.2
+    done
+  }
+
   write_screenshot() {
     mkdir -p _screenshot
     screenshot_n=$((screenshot_n + 1))
     svg="$(printf "_screenshot/screenshot.%00d.svg" "$screenshot_n")"
+    [ "$screenshot_n" -eq 1 ] && wait_for_screenshot_server
     echo svg | nc -v localhost 4242 > "$svg" 2>/dev/null
     convert "$svg" "$(printf "_screenshot/screenshot.%00d.jpg" "$screenshot_n")" >/dev/null 2>&1
   }
