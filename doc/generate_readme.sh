@@ -14,7 +14,7 @@ You need to:
 
 **Just copy the [fsh](fsh) function in your script.**
 
-[![screenshot](doc/animation_small.gif)](doc/animation.gif)
+[![screenshot](doc/animation.gif)](doc/animation.gif)
 
 ## usage example
 

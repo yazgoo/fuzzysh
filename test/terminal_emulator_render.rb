@@ -33,38 +33,20 @@ class Terminal
       "\e[#{@color}m"
     end
     def ansi_to_css(n)
-      case n
-      when 0
-        "black"
-      when 1
-        "red"
-      when 2
-        "green"
-      when 3
-        "yellow"
-      when 4
-        "blue"
-      when 5
-        "magenta"
-      when 6
-        "cyan"
-      when 7
-        "white"
-      else
-        "black"
-      end
+      { 30 => "black", 31 => "red", 32 => "green", 33 => "yellow", 34 => "blue", 35 => "magenta", 36 => "cyan", 37 => "white" , 
+        40 => "grey", 41 => "red", 42 => "green", 43 => "yellow", 44 => "blue", 45 => "magenta", 46 => "cyan", 47 => "white" }[n]
     end
 
     def to_css
       n = @color.sub("1;", "").to_i
-      n / 10 == 3 ? "color: #{ansi_to_css(n - 30)};" : 
-        n / 10 == 4 ? "background-color: #{ansi_to_css(n - 40)};" : ""
+      n / 10 == 3 ? "color: #{ansi_to_css(n)};" : 
+        n / 10 == 4 ? "background-color: #{ansi_to_css(n)};" : ""
     end
 
     def to_svg
       n = @color.sub("1;", "").to_i
-      n / 10 == 3 ? "stroke=\"#{ansi_to_css(n - 30)}\"" : 
-        n / 10 == 4 ? "fill=\"#{ansi_to_css(n - 40)}\"" : ""
+      n / 10 == 3 ? "stroke=\"#{ansi_to_css(n)}\"" : 
+        n / 10 == 4 ? "fill=\"#{ansi_to_css(n)}\"" : ""
     end
   end
 
@@ -75,28 +57,41 @@ class Terminal
       @col = col.to_i
       @row = row.to_i
       @char = Char.new(" ")
-      @color = Color.new("0")
+      @fg_color = Color.new("1")
+      @bg_color = Color.new("1")
     end
 
-    def set(char, color)
+    def set(char, color, bg_color)
       @char = Char.new(char)
-      @color = Color.new(color)
+      @fg_color = Color.new(color)
+      @bg_color = Color.new(bg_color)
     end
 
-    def set_color(color)
-      @color = Color.new(color)
+    def set_fg_color(color)
+      @fg_color = Color.new(color)
     end
+
+    def set_bg_color(color)
+      @bg_color = Color.new(color)
+    end
+
 
     def to_svg
-      "<text x=\"#{@col * 8}\" y=\"#{@row * 12}\" #{@color.to_svg} style=\"font-family: monospace;\">#{@char}</text>\n"
+      bg_color_svg = @bg_color.to_svg
+      bg = ""
+      if bg_color_svg != ""
+        bg = "<rect x=\"#{@col * 8}\" y=\"#{(@row - 1) * 12 + 1}\" width=\"8\" height=\"12\" #{bg_color_svg}></rect>\n"
+      end
+      text = "<text x=\"#{@col * 8}\" y=\"#{@row * 12}\" #{@fg_color.to_svg} style=\"font-family: monospace;\">#{@char}</text>\n"
+      bg + text
     end
 
     def to_html
-      "<span style=\"letter-spacing: 0; line-height: 1.25em; font-family: monospace; #{@color.to_css}\">#{@char.to_html}</span>"
+      "<span style=\"letter-spacing: 0; line-height: 1.25em; font-family: monospace; #{@fg_color.to_css}\">#{@char.to_html}</span>"
     end
 
     def to_ansi
-      "#{@color}#{@char}#{Color.new(0)}"
+      "#{@bg_color}#{@fg_color}#{@char}#{Color.new(0)}"
     end
 
     def to_s
@@ -117,8 +112,21 @@ class Terminal
           Termel.new(c, r + 1) } 
       end
     elsif command == "m"
-      @color = args
-      @buffer[@row - 1][@col - 1].set_color(@color)
+      if args == "0"
+        @fg_color = "1"
+        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color)
+        @bg_color = "1"
+        @buffer[@row - 1][@col - 1].set_bg_color(@bg_color)
+      elsif args.include?(";") and args.split(";")[1][0] == "3"
+        @fg_color = args
+        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color)
+      elsif args.include?(";") and args.split(";")[1][0] == "4"
+        @bg_color = args
+        @buffer[@row - 1][@col - 1].set_bg_color(@bg_color)
+      else
+        puts "Unknown color: #{args}"
+        exit 1
+      end
     elsif command == "h"
       # ignore
     elsif command == "l"
@@ -145,7 +153,8 @@ class Terminal
   end
   
   def initialize rows, cols
-    @color = 1
+    @fg_color = "1"
+    @bg_color = "1"
     @rows = rows
     @cols = cols
     @buffer = Array.new(@rows) { Array.new(@cols) }
@@ -171,7 +180,7 @@ class Terminal
         @col = 1
       else
         STDOUT.write char if passthrough
-        @buffer[@row - 1][@col - 1].set(char, @color)
+        @buffer[@row - 1][@col - 1].set(char, @fg_color, @bg_color)
         @col += 1
         if @col > @cols
           @col = 1
@@ -204,7 +213,9 @@ class Terminal
 
   def to_svg
     buffer = @buffer.map { |row| row.map { |c| c.to_svg }.join }.join
-    "<svg width=\"#{(@cols + 1) * 8}\" height=\"#{(@rows + 1) * 12}\" xmlns=\"http://www.w3.org/2000/svg\">\n#{buffer}\n</svg>"
+    "<svg width=\"#{(@cols + 1) * 8}\" height=\"#{(@rows + 1) * 12}\" xmlns=\"http://www.w3.org/2000/svg\">
+      #{buffer}
+    </svg>"
   end
 
 

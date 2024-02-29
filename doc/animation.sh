@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -e
-ANIMATION_WIDTH=80
-ANIMATION_HEIGHT=24
+ANIMATION_WIDTH=40
+ANIMATION_HEIGHT=12
 up="$(echo '\x1b')[A"
 down="$(echo '\x1b')[B"
 /bin/rm -f _screenshot/*
