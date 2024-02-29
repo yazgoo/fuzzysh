@@ -2,6 +2,8 @@ cat <<'EOT' > README.md
 
 Minimalist selector in shell, à la [fzf](https://github.com/junegunn/fzf)
 
+[![screenshot](doc/animation.gif)](doc/animation.gif)
+
 [![test](https://github.com/yazgoo/fuzzysh/actions/workflows/test.yml/badge.svg)](https://github.com/yazgoo/fuzzysh/actions/workflows/test.yml)
 
 ## what's it for ?
@@ -13,8 +15,6 @@ You need to:
 - with minimal dependencies ?
 
 **Just copy the [fsh](fsh) function in your script.**
-
-[![screenshot](doc/animation.gif)](doc/animation.gif)
 
 ## usage example
 
