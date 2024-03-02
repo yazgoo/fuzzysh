@@ -277,6 +277,9 @@ if options.key?(:spawn)
   PTY.spawn(args_redirected) do |stdout_stderr, stdin, pid|
     begin
       Thread.new do
+        if not options[:cols].nil? and not options[:rows].nil?
+          stdin.winsize = [options[:rows], options[:cols]]
+        end
         loop do
           char = STDIN.getc
           break if char.nil?  # Break the loop if no more input is available
