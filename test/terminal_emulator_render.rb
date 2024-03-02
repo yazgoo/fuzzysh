@@ -235,50 +235,50 @@ class Terminal
 
 end
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: [options]"
+def parse_opts
+  options = {}
+  OptionParser.new do |opts|
+    opts.banner = "Usage: [options]"
 
-  opts.on("-p", "--passthrough", "Directly output stdin to stdout") do |v|
-    options[:passthrough] = v
-  end
+    opts.on("-p", "--passthrough", "Directly output stdin to stdout") do |v|
+      options[:passthrough] = v
+    end
 
-  opts.on("-r", "--rows ROWS", "Number of rows") do |v|
-    options[:rows] = v.to_i
-  end
+    opts.on("-r", "--rows ROWS", "Number of rows") do |v|
+      options[:rows] = v.to_i
+    end
 
-  opts.on("-c", "--cols COLS", "Number of columns") do |v|
-    options[:cols] = v.to_i
-  end
+    opts.on("-c", "--cols COLS", "Number of columns") do |v|
+      options[:cols] = v.to_i
+    end
 
-  opts.on("-f", "--final", "put final buffer state to stdout") do |v|
-    options[:final] = v
-  end
+    opts.on("-f", "--final", "put final buffer state to stdout") do |v|
+      options[:final] = v
+    end
 
-  opts.on("-P", "--port PORT", "Port to listen on") do |v|
-    options[:port] = v.to_i
-  end
+    opts.on("-P", "--port PORT", "Port to listen on") do |v|
+      options[:port] = v.to_i
+    end
 
-  opts.on("-e", "--stderr", "read data from stderr") do |v|
-    options[:stderr] = v
-  end
+    opts.on("-e", "--stderr", "read data from stderr") do |v|
+      options[:stderr] = v
+    end
 
-  opts.on("-s", "--spawn ARGS", "spawn program") do |args|
-    options[:spawn] = args.to_s
-  end
-end.parse!
+    opts.on("-s", "--spawn ARGS", "spawn program") do |args|
+      options[:spawn] = args.to_s
+    end
+  end.parse!
+  options
+end
 
-t = Terminal.new(options[:rows], options[:cols])
-t.server(options[:port]) if options.key?(:port)
-if options.key?(:spawn)
-  args = options[:spawn]
+def spawn(args, stderr, cols, rows)
   STDIN.raw!
-  args_redirected = options[:stderr] ? "#{args} >&2" : args
+  args_redirected = stderr ? "#{args} >&2" : args
   PTY.spawn(args_redirected) do |stdout_stderr, stdin, pid|
     begin
       Thread.new do
-        if not options[:cols].nil? and not options[:rows].nil?
-          stdin.winsize = [options[:rows], options[:cols]]
+        if not cols.nil? and not rows.nil?
+          stdin.winsize = [rows, cols]
         end
         loop do
           char = STDIN.getc
@@ -287,7 +287,7 @@ if options.key?(:spawn)
         end
       end
       begin
-        t.run(stdout_stderr, options[:passthrough])
+        yield stdout_stderr
       rescue Errno::EIO
         # do nothing
       end
@@ -299,6 +299,15 @@ if options.key?(:spawn)
     end
   end
   STDIN.cooked!
+end
+
+options = parse_opts
+t = Terminal.new(options[:rows], options[:cols])
+t.server(options[:port]) if options.key?(:port)
+if options.key?(:spawn)
+  spawn(options[:spawn], options[:stderr], options[:cols], options[:rows]) do |stdout_stderr|
+    t.run(stdout_stderr, options[:passthrough])
+  end
 else
   t.run(STDIN, options[:passthrough])
 end
