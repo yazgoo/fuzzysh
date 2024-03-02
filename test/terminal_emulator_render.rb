@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
+require 'pty'
 require 'optparse'
 require 'socket'
+require 'io/console'
 
 class Terminal
 
@@ -256,9 +258,45 @@ OptionParser.new do |opts|
   opts.on("-P", "--port PORT", "Port to listen on") do |v|
     options[:port] = v.to_i
   end
+
+  opts.on("-e", "--stderr", "read data from stderr") do |v|
+    options[:stderr] = v
+  end
+
+  opts.on("-s", "--spawn ARGS", "spawn program") do |args|
+    options[:spawn] = args.to_s
+  end
 end.parse!
 
 t = Terminal.new(options[:rows], options[:cols])
 t.server(options[:port]) if options.key?(:port)
-t.run(STDIN, options[:passthrough])
+if options.key?(:spawn)
+  args = options[:spawn]
+  STDIN.raw!
+  args_redirected = options[:stderr] ? "#{args} >&2" : args
+  PTY.spawn(args_redirected) do |stdout_stderr, stdin, pid|
+    begin
+      Thread.new do
+        loop do
+          char = STDIN.getc
+          break if char.nil?  # Break the loop if no more input is available
+          stdin.putc char
+        end
+      end
+      begin
+        t.run(stdout_stderr, options[:passthrough])
+      rescue Errno::EIO
+        # do nothing
+      end
+    ensure
+      # Close the pseudo-terminal when done
+      Process.wait(pid)
+      stdin.close
+      stdout_stderr.close
+    end
+  end
+  STDIN.cooked!
+else
+  t.run(STDIN, options[:passthrough])
+end
 puts t.to_s if options[:final]
