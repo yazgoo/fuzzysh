@@ -101,54 +101,107 @@ class Terminal
     end
   end
 
-  def interprete_escape_sequence(command, args, passthrough)
+  def info(msg, log)
+    if log
+      File.open(log, "a") do |f|
+        f.puts(msg)
+      end
+    end
+  end
+
+  def exit_with_error(msg, log)
+    info(msg, log)
+    puts msg
+    exit 1
+  end
+
+  def interprete_escape_sequence(command, args, passthrough, log)
+    info("escape sequence: args: #{args} command: #{command}", log)
     STDOUT.printf "\e[#{args}#{command}" if passthrough
     if command == "H"
       @row = args.split(";")[0].to_i
       @col = args.split(";")[1].to_i
     elsif command == "J"
-      @buffer.each_with_index do |row, r| 
-        c = 0
-        row.map! { |col| 
-          c += 1
-          Termel.new(c, r + 1) } 
+      if args == "2"
+        info("clear screen", log)
+        @buffer.each_with_index do |row, r|
+          c = 0
+          row.map! { |col|
+            c += 1
+            Termel.new(c, r + 1) }
+        end
+      else
+        exit_with_error("Unknown escape sequence: #{args}#{command}", log)
       end
     elsif command == "m"
       if args == "0"
         @fg_color = "1"
-        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color)
+        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color) if @col <= @cols and @row <= @rows
         @bg_color = "1"
-        @buffer[@row - 1][@col - 1].set_bg_color(@bg_color)
-      elsif args.include?(";") and args.split(";")[1][0] == "3"
+        @buffer[@row - 1][@col - 1].set_bg_color(@bg_color) if @col <= @cols and @row <= @rows
+      elsif args.include?(";") and (args.split(";")[1][0] == "3" or args.start_with?("38;"))
         @fg_color = args
-        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color)
-      elsif args.include?(";") and args.split(";")[1][0] == "4"
+        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color) if @col <= @cols and @row <= @rows
+      elsif args.include?(";") and (args.split(";")[1][0] == "4" or args.start_with?("48;"))
         @bg_color = args
         @buffer[@row - 1][@col - 1].set_bg_color(@bg_color)
+      elsif args == "1"
+        # bold
+        # TODO
+      elsif args == "7"
+        # inverse video mode
+        info("inverse video", log)
+      elsif args == "27"
+        # reverse video mode
+        info("reverse video", log)
       else
-        puts "Unknown color: #{args}"
-        exit 1
+        exit_with_error("Unknown color: «#{args}»", log)
       end
     elsif command == "h"
-      # ignore
+      if args == "?1049"
+        # enable alternate screen buffer
+        info("enable alternate screen buffer", log)
+        # TODO
+      elsif args == "?25"
+        # rmcup
+        info("rmcup", log)
+        # TODO
+      elsif args == "?1"
+        # 40 x 25 colors (text) screen mode
+        info("40 x 25 colors (text) screen mode", log)
+        # TODO
+      else
+        exit_with_error("Unknown escape sequence: '#{args}#{command}'", log)
+      end
     elsif command == "l"
-      # ignore
+      if args == "?1049"
+        # disable alternate screen buffer
+        info("disable alternate screen buffer", log)
+        # TODO
+      elsif args == "?25"
+        # smcup
+        info("smcup", log)
+        # TODO
+      else
+        exit_with_error("Unknown escape sequence: '#{args}#{command}'", log)
+      end
+    elsif command == "K"
+      # TODO
     else
-      puts "Unknown escape sequence: #{command}"
-      exit 1
+      exit_with_error("Unknown escape sequence: '#{args}#{command}'", log)
     end
   end
 
-  def read_escape_sequence(file, passthrough)
+  def read_escape_sequence(file, passthrough, log)
     if file.read(1) == "["
       chars = ""
       char = ""
       while file.eof? == false
         char = file.read(1)
-        break if ["h", "l", "m", "H", "J"].include?(char)
+        break if ["h", "l", "m", "H", "J", "K"].include?(char)
         chars += char
       end
-      interprete_escape_sequence(char, chars, passthrough)
+      interprete_escape_sequence(char, chars, passthrough, log)
     else
       exit 1
     end
@@ -169,20 +222,31 @@ class Terminal
     @col = 1
   end
 
-  def run(file, passthrough=true)
+  def run(file, passthrough=true, log=nil)
     while file.eof? == false
       char = file.getc
+      info("char: #{char.unpack('c*')}", log)
       if char.ord == 27
-        read_escape_sequence(file, passthrough)
+        read_escape_sequence(file, passthrough, log)
       elsif char.ord == 10
         @row += 1
         @col = 1
         STDOUT.puts if passthrough
-      elsif char.ord == 15
+      elsif char.ord == 27
+        # escape
+      elsif char.ord == 13
         @col = 1
+        STDOUT.print "\r" if passthrough
       else
         STDOUT.write char if passthrough
-        @buffer[@row - 1][@col - 1].set(char, @fg_color, @bg_color)
+        row = @row - 1
+        col = @col - 1
+        col = 0 if col < 0
+        row = 0 if row < 0
+        col = @cols - 1 if col > @cols - 1
+        row = @rows - 1 if row > @rows - 1
+        info("set buffer row: #{row} col: #{col} «#{char}»", log)
+        @buffer[row][col].set(char, @fg_color, @bg_color)
         @col += 1
         if @col > @cols
           @col = 1
@@ -267,13 +331,17 @@ def parse_opts
     opts.on("-s", "--spawn ARGS", "spawn program") do |args|
       options[:spawn] = args.to_s
     end
+
+    opts.on("-l", "--log LOGFILE", "log to file") do |v|
+      options[:log] = v
+    end
   end.parse!
   options
 end
 
 def spawn(args, stderr, cols, rows)
   STDIN.raw!
-  args_redirected = stderr ? "#{args} >&2" : args
+  args_redirected = stderr ? "#{args} 2>&1" : args
   PTY.spawn(args_redirected) do |stdout_stderr, stdin, pid|
     begin
       Thread.new do
@@ -306,9 +374,9 @@ t = Terminal.new(options[:rows], options[:cols])
 t.server(options[:port]) if options.key?(:port)
 if options.key?(:spawn)
   spawn(options[:spawn], options[:stderr], options[:cols], options[:rows]) do |stdout_stderr|
-    t.run(stdout_stderr, options[:passthrough])
+    t.run(stdout_stderr, options[:passthrough], options[:log])
   end
 else
-  t.run(STDIN, options[:passthrough])
+  t.run(STDIN, options[:passthrough], options[:log])
 end
 puts t.to_s if options[:final]
