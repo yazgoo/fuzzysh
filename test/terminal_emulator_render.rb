@@ -101,6 +101,60 @@ class Terminal
     end
   end
 
+  class Buffer
+    def initialize(rows, cols)
+      @rows = rows
+      @cols = cols
+      @buffer = Array.new(@rows) { Array.new(@cols) }
+    end
+
+    def row_col_to_0_based(row, col)
+      # row, col start at 1, row0, col0 start at 0
+      row0 = row - 1
+      col0 = col - 1
+      col0 = 0 if col0 < 0
+      row0 = 0 if row0 < 0
+      col0 = @cols - 1 if col0 > @cols - 1
+      row0 = @rows - 1 if row0> @rows - 1
+      [row0, col0]
+    end
+
+    def access(row, col)
+      row0, col0 = row_col_to_0_based(row, col)
+      yield @buffer[row0][col0]
+    end
+
+    def set(row, col, char, fg_color, bg_color)
+      access(row, col) { |termel| termel.set(char, fg_color, bg_color) }
+    end
+
+    def set_fg_color(row, col, fg_color)
+      access(row, col) { |termel| termel.set_fg_color(fg_color) }
+    end
+
+    def set_bg_color(row, col, bg_color)
+      access(row, col) { |termel| termel.set_bg_color(bg_color) }
+    end
+
+    def set_fg_bg_color(row, col, fg_color, bg_color)
+      access(row, col) { |termel| 
+        termel.set_fg_color(fg_color)
+        termel.set_bg_color(bg_color)
+      }
+    end
+
+    def reduce_s(line_separator="\n")
+      @buffer.map { |row| row.map { |termel| yield termel }.join }.join(line_separator)
+    end
+
+    def clear
+      @buffer.each_with_index do |row, r|
+        c = 0
+        row.map! { |col| c += 1; Termel.new(c, r + 1) }
+      end
+    end
+  end
+
   def info(msg, log)
     if log
       File.open(log, "a") do |f|
@@ -124,27 +178,21 @@ class Terminal
     elsif command == "J"
       if args == "2"
         info("clear screen", log)
-        @buffer.each_with_index do |row, r|
-          c = 0
-          row.map! { |col|
-            c += 1
-            Termel.new(c, r + 1) }
-        end
+        @buffer.clear
       else
         exit_with_error("Unknown escape sequence: #{args}#{command}", log)
       end
     elsif command == "m"
       if args == "0"
         @fg_color = "1"
-        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color) if @col <= @cols and @row <= @rows
         @bg_color = "1"
-        @buffer[@row - 1][@col - 1].set_bg_color(@bg_color) if @col <= @cols and @row <= @rows
+        @buffer.set_fg_bg_color(@row, @col, @fg_color, @bg_color)
       elsif args.include?(";") and (args.split(";")[1][0] == "3" or args.start_with?("38;"))
         @fg_color = args
-        @buffer[@row - 1][@col - 1].set_fg_color(@fg_color) if @col <= @cols and @row <= @rows
+        @buffer.set_fg_color(@row, @col, @fg_color)
       elsif args.include?(";") and (args.split(";")[1][0] == "4" or args.start_with?("48;"))
         @bg_color = args
-        @buffer[@row - 1][@col - 1].set_bg_color(@bg_color)
+        @buffer.set_bg_color(@row, @col, @bg_color)
       elsif args == "1"
         # bold
         # TODO
@@ -212,12 +260,9 @@ class Terminal
     @bg_color = "1"
     @rows = rows
     @cols = cols
-    @buffer = Array.new(@rows) { Array.new(@cols) }
+    @buffer = Buffer.new(@rows, @cols)
     # initialize buffer with spaces
-    @buffer.each_with_index do |row, r|
-      c = 0
-      row.map! { |col| c += 1; Termel.new(c, r + 1) }
-    end
+    @buffer.clear
     @row = 1
     @col = 1
   end
@@ -239,14 +284,8 @@ class Terminal
         STDOUT.print "\r" if passthrough
       else
         STDOUT.write char if passthrough
-        row = @row - 1
-        col = @col - 1
-        col = 0 if col < 0
-        row = 0 if row < 0
-        col = @cols - 1 if col > @cols - 1
-        row = @rows - 1 if row > @rows - 1
-        info("set buffer row: #{row} col: #{col} «#{char}»", log)
-        @buffer[row][col].set(char, @fg_color, @bg_color)
+        info("set buffer row: #{@row} col: #{@col} «#{char}»", log)
+        @buffer.set(@row, @col, char, @fg_color, @bg_color)
         @col += 1
         if @col > @cols
           @col = 1
@@ -278,7 +317,7 @@ class Terminal
   end
 
   def to_svg
-    buffer = @buffer.map { |row| row.map { |c| c.to_svg }.join }.join
+    buffer = @buffer.reduce_s { |termel| c.to_svg }
     "<svg width=\"#{(@cols + 1) * 8}\" height=\"#{(@rows + 1) * 12}\" xmlns=\"http://www.w3.org/2000/svg\">
       #{buffer}
     </svg>"
@@ -286,15 +325,15 @@ class Terminal
 
 
   def to_html
-    @buffer.map { |row| row.map { |c| c.to_html }.join }.join("<br/>")
+    @buffer.reduce_s("<br/>") { |c| c.to_html }
   end
 
   def to_ansi
-    @buffer.map { |row| row.map { |c| c.to_ansi }.join }.join("\n")
+    @buffer.reduce_s { |c| c.to_ansi }
   end
 
   def to_s
-    @buffer.map { |row| row.map { |c| c.to_s }.join }.join("\n")
+    @buffer.reduce_s { |c| c.to_s }
   end
 
 end
