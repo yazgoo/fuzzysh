@@ -4,6 +4,29 @@ require 'optparse'
 require 'socket'
 require 'io/console'
 
+def do_log(level, msg, log)
+  if log
+    File.open(log, "a") do |f|
+      f.puts("#{level.to_s} #{msg}")
+    end
+  end
+end
+
+def info(msg, log)
+  do_log(:info, msg, log)
+end
+
+def error(msg, log)
+  do_log(:error, msg, log)
+end
+
+def warn(msg, log)
+  do_log(:warn, msg, log)
+end
+
+
+
+
 class Terminal
 
   class Char
@@ -144,7 +167,10 @@ class Terminal
     end
 
     def reduce_s(line_separator="\n")
-      @buffer.map { |row| row.map { |termel| yield termel }.join }.join(line_separator)
+      @buffer.map do |row|
+        row.map do |termel| yield termel 
+        end.join 
+      end.join(line_separator)
     end
 
     def clear
@@ -155,16 +181,9 @@ class Terminal
     end
   end
 
-  def info(msg, log)
-    if log
-      File.open(log, "a") do |f|
-        f.puts(msg)
-      end
-    end
-  end
-
   def exit_with_error(msg, log)
-    info(msg, log)
+    error(msg, log)
+    error("exit 1", log)
     puts msg
     exit 1
   end
@@ -183,7 +202,11 @@ class Terminal
         exit_with_error("Unknown escape sequence: #{args}#{command}", log)
       end
     elsif command == "m"
-      if args == "0"
+      args = args.gsub("\r\n", "")
+      info("color: (size == #{args.size}) #{args}", log)
+      if args.size == 0
+        info("empty color", log)
+      elsif args == "0"
         @fg_color = "1"
         @bg_color = "1"
         @buffer.set_fg_bg_color(@row, @col, @fg_color, @bg_color)
@@ -196,61 +219,86 @@ class Terminal
       elsif args == "1"
         # bold
         # TODO
+        warn("bold not implemented", log)
       elsif args == "7"
         # inverse video mode
-        info("inverse video", log)
+        warn("inverse video not implemented", log)
       elsif args == "27"
         # reverse video mode
-        info("reverse video", log)
+        warn("reverse video not implemented", log)
       else
-        exit_with_error("Unknown color: «#{args}»", log)
+        error("exit color", log)
+        error("exit color «#{args.size}»", log)
+        exit_with_error("Unknown color: [#{is}] «#{args}»", log)
       end
     elsif command == "h"
       if args == "?1049"
         # enable alternate screen buffer
-        info("enable alternate screen buffer", log)
+        warn("enable alternate screen buffer not implemented", log)
         # TODO
       elsif args == "?25"
         # rmcup
-        info("rmcup", log)
+        warn("rmcup not implemented", log)
         # TODO
       elsif args == "?1"
         # 40 x 25 colors (text) screen mode
-        info("40 x 25 colors (text) screen mode", log)
+        warn("40 x 25 colors (text) screen mode not implemented", log)
         # TODO
+      elsif args == "?7"
+        warn("auto wrap not implemented", log)
+        # TODO enable line wrapping
       else
         exit_with_error("Unknown escape sequence: '#{args}#{command}'", log)
       end
     elsif command == "l"
       if args == "?1049"
         # disable alternate screen buffer
-        info("disable alternate screen buffer", log)
+        warn("disable alternate screen buffer not implemented", log)
         # TODO
       elsif args == "?25"
         # smcup
-        info("smcup", log)
+        warn("smcup not implemented", log)
         # TODO
+      elsif args == "4"
+        # TODO what is this ?
+        warn("what is this? implemented", log)
       else
         exit_with_error("Unknown escape sequence: '#{args}#{command}'", log)
       end
     elsif command == "K"
       # TODO
+    elsif command == "t"
+      # window manipulation (XTWINOPS)
     else
       exit_with_error("Unknown escape sequence: '#{args}#{command}'", log)
     end
   end
 
   def read_escape_sequence(file, passthrough, log)
-    if file.read(1) == "["
+    info("read_escape_sequence", log)
+    c = file.read(1)
+    info("read_escape_sequence: c: #{c.unpack('c*')}", log)
+    #info("read_escape_sequence: char: #{char.unpack('c*')}", log)
+    if c == "["
       chars = ""
       char = ""
       while file.eof? == false
         char = file.read(1)
-        break if ["h", "l", "m", "H", "J", "K"].include?(char)
+        info("read_escape_sequence: char: #{char.unpack('c*')} (#{char})", log)
+        if ["h", "l", "m", "H", "J", "K", "t"].include?(char.to_s)
+          info("end of sequence", log)
+          break 
+        end
         chars += char
       end
+      info("before interprete sequence done", log)
       interprete_escape_sequence(char, chars, passthrough, log)
+      info("interprete escape sequence done", log)
+    elsif c.to_i == 0
+      info("ignore escape sequence: #{c.to_i}", log)
     else
+      info("unknown escape sequence: #{c.to_i}", log)
+      info("exit 1", log)
       exit 1
     end
   end
@@ -268,30 +316,36 @@ class Terminal
   end
 
   def run(file, passthrough=true, log=nil)
-    while file.eof? == false
-      char = file.getc
-      info("char: #{char.unpack('c*')}", log)
-      if char.ord == 27
-        read_escape_sequence(file, passthrough, log)
-      elsif char.ord == 10
-        @row += 1
-        @col = 1
-        STDOUT.puts if passthrough
-      elsif char.ord == 27
-        # escape
-      elsif char.ord == 13
-        @col = 1
-        STDOUT.print "\r" if passthrough
-      else
-        STDOUT.write char if passthrough
-        info("set buffer row: #{@row} col: #{@col} «#{char}»", log)
-        @buffer.set(@row, @col, char, @fg_color, @bg_color)
-        @col += 1
-        if @col > @cols
-          @col = 1
+    begin
+      while file.eof? == false
+        info("run loop", log)
+        char = file.getc
+        info("char: #{char.unpack('c*')}", log)
+        if char.ord == 27
+          read_escape_sequence(file, passthrough, log)
+        elsif char.ord == 10
           @row += 1
+          @col = 1
+          STDOUT.puts if passthrough
+        elsif char.ord == 27
+          # escape
+        elsif char.ord == 13
+          @col = 1
+          STDOUT.print "\r" if passthrough
+        else
+          STDOUT.write char if passthrough
+          info("set buffer row: #{@row} col: #{@col} «#{char}»", log)
+          @buffer.set(@row, @col, char, @fg_color, @bg_color)
+          @col += 1
+          if @col > @cols
+            @col = 1
+            @row += 1
+          end
         end
       end
+      info("end of file", log)
+    rescue e
+      info("error: #{e}", log)
     end
   end
 
@@ -317,7 +371,7 @@ class Terminal
   end
 
   def to_svg
-    buffer = @buffer.reduce_s { |termel| c.to_svg }
+    buffer = @buffer.reduce_s { |termel| termel.to_svg }
     "<svg width=\"#{(@cols + 1) * 8}\" height=\"#{(@rows + 1) * 12}\" xmlns=\"http://www.w3.org/2000/svg\">
       #{buffer}
     </svg>"
@@ -378,7 +432,7 @@ def parse_opts
   options
 end
 
-def spawn(args, stderr, cols, rows)
+def spawn(args, stderr, cols, rows, log)
   STDIN.raw!
   args_redirected = stderr ? "#{args} 2>&1" : args
   PTY.spawn(args_redirected) do |stdout_stderr, stdin, pid|
@@ -389,13 +443,17 @@ def spawn(args, stderr, cols, rows)
         end
         loop do
           char = STDIN.getc
+          info("stdin char: #{char.to_i}", log)
           break if char.nil?  # Break the loop if no more input is available
           stdin.putc char
         end
       end
+      info("stdout start yield", log)
       begin
+        info("stdout read", log)
         yield stdout_stderr
       rescue Errno::EIO
+        info("stdout Errno::EIO", log)
         # do nothing
       end
     ensure
@@ -412,10 +470,10 @@ options = parse_opts
 t = Terminal.new(options[:rows], options[:cols])
 t.server(options[:port]) if options.key?(:port)
 if options.key?(:spawn)
-  spawn(options[:spawn], options[:stderr], options[:cols], options[:rows]) do |stdout_stderr|
+  spawn(options[:spawn], options[:stderr], options[:cols], options[:rows], options[:log]) do |stdout_stderr|
     t.run(stdout_stderr, options[:passthrough], options[:log])
   end
 else
   t.run(STDIN, options[:passthrough], options[:log])
-end
+end 
 puts t.to_s if options[:final]

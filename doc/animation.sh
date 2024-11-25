@@ -10,4 +10,4 @@ FSH_COLUMNS=${ANIMATION_WIDTH} \
   FSH_TEST_INPUT="tes$up$up$up" \
   FSH_SCREENSHOT=1 \
   ./fsh 2>&1 | \
-  ./test/terminal_emulator_render.rb -r ${ANIMATION_HEIGHT} -c ${ANIMATION_WIDTH} -P 4242 -p
+  ./test/terminal_emulator_render.rb -l x.log -r ${ANIMATION_HEIGHT} -c ${ANIMATION_WIDTH} -P 4242 -p
