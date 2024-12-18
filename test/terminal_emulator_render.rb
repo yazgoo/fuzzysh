@@ -4,10 +4,37 @@ require 'optparse'
 require 'socket'
 require 'io/console'
 
+class Color
+  def initialize(color)
+    @color = color
+  end
+  def to_s
+    "\e[#{@color}m"
+  end
+  def ansi_to_css(n)
+    { 30 => "black", 31 => "red", 32 => "green", 33 => "yellow", 34 => "blue", 35 => "magenta", 36 => "cyan", 37 => "white" , 
+      40 => "grey", 41 => "red", 42 => "green", 43 => "yellow", 44 => "blue", 45 => "magenta", 46 => "cyan", 47 => "white" }[n]
+  end
+
+  def to_css
+    n = @color.sub("1;", "").to_i
+    n / 10 == 3 ? "color: #{ansi_to_css(n)};" : 
+      n / 10 == 4 ? "background-color: #{ansi_to_css(n)};" : ""
+  end
+
+  def to_svg
+    n = @color.sub("1;", "").to_i
+    n / 10 == 3 ? "stroke=\"#{ansi_to_css(n)}\"" : 
+      n / 10 == 4 ? "fill=\"#{ansi_to_css(n)}\"" : ""
+  end
+end
+
 def do_log(level, msg, log)
+  color = Color.new({ info: 31, error: 32, warn: 33, debug: 34}[level])
+  end_color = Color.new(0)
   if log
     File.open(log, "a") do |f|
-      f.puts("#{level.to_s} #{msg}")
+      f.puts("#{color}#{level.upcase.to_s}#{end_color} #{msg}")
     end
   end
 end
@@ -24,8 +51,9 @@ def warn(msg, log)
   do_log(:warn, msg, log)
 end
 
-
-
+def debug(msg, log)
+  do_log(:debug, msg, log)
+end
 
 class Terminal
 
@@ -50,30 +78,6 @@ class Terminal
     end
   end
 
-  class Color
-    def initialize(color)
-      @color = color
-    end
-    def to_s
-      "\e[#{@color}m"
-    end
-    def ansi_to_css(n)
-      { 30 => "black", 31 => "red", 32 => "green", 33 => "yellow", 34 => "blue", 35 => "magenta", 36 => "cyan", 37 => "white" , 
-        40 => "grey", 41 => "red", 42 => "green", 43 => "yellow", 44 => "blue", 45 => "magenta", 46 => "cyan", 47 => "white" }[n]
-    end
-
-    def to_css
-      n = @color.sub("1;", "").to_i
-      n / 10 == 3 ? "color: #{ansi_to_css(n)};" : 
-        n / 10 == 4 ? "background-color: #{ansi_to_css(n)};" : ""
-    end
-
-    def to_svg
-      n = @color.sub("1;", "").to_i
-      n / 10 == 3 ? "stroke=\"#{ansi_to_css(n)}\"" : 
-        n / 10 == 4 ? "fill=\"#{ansi_to_css(n)}\"" : ""
-    end
-  end
 
 
   class Termel
@@ -129,6 +133,7 @@ class Terminal
       @rows = rows
       @cols = cols
       @buffer = Array.new(@rows) { Array.new(@cols) }
+      # TODO buffer should handle overflow in term of lines
     end
 
     def row_col_to_0_based(row, col)
@@ -138,7 +143,12 @@ class Terminal
       col0 = 0 if col0 < 0
       row0 = 0 if row0 < 0
       col0 = @cols - 1 if col0 > @cols - 1
-      row0 = @rows - 1 if row0> @rows - 1
+      if row > @buffer.size
+        (row - @buffer.size).times do
+          @buffer.push((1..@cols).to_a.map { |c| Termel.new(c, row) })
+        end
+      end
+
       [row0, col0]
     end
 
@@ -189,11 +199,12 @@ class Terminal
   end
 
   def interprete_escape_sequence(command, args, passthrough, log)
-    info("escape sequence: args: #{args} command: #{command}", log)
+    info("escape sequence: ESC[#{args}#{command} (args: #{args} command: #{command})", log)
     STDOUT.printf "\e[#{args}#{command}" if passthrough
     if command == "H"
       @row = args.split(";")[0].to_i
       @col = args.split(";")[1].to_i
+      info("move cursor to row: #{@row}, col: #{@col}", log)
     elsif command == "J"
       if args == "2"
         info("clear screen", log)
@@ -269,6 +280,7 @@ class Terminal
       # TODO
     elsif command == "t"
       # window manipulation (XTWINOPS)
+      warn("window manipulation is ignored", log)
     else
       exit_with_error("Unknown escape sequence: '#{args}#{command}'", log)
     end
@@ -277,6 +289,7 @@ class Terminal
   def read_escape_sequence(file, passthrough, log)
     info("read_escape_sequence", log)
     c = file.read(1)
+    debug("file char: #{c.unpack('c*')[0]}", log)
     info("read_escape_sequence: c: #{c.unpack('c*')}", log)
     #info("read_escape_sequence: char: #{char.unpack('c*')}", log)
     if c == "["
@@ -284,21 +297,24 @@ class Terminal
       char = ""
       while file.eof? == false
         char = file.read(1)
-        info("read_escape_sequence: char: #{char.unpack('c*')} (#{char})", log)
+        debug("file char: #{char.unpack('c*')[0]}", log)
+        debug("read_escape_sequence: char: #{char.unpack('c*')} (#{char})", log)
         if ["h", "l", "m", "H", "J", "K", "t"].include?(char.to_s)
-          info("end of sequence", log)
+          debug("end of sequence", log)
           break 
         end
         chars += char
       end
-      info("before interprete sequence done", log)
+      debug("before interprete sequence done", log)
       interprete_escape_sequence(char, chars, passthrough, log)
-      info("interprete escape sequence done", log)
+      debug("interprete escape sequence done", log)
+    elsif c == "="
+      warn("ignore application keypade mode", log)
     elsif c.to_i == 0
-      info("ignore escape sequence: #{c.to_i}", log)
+      warn("ignore escape sequence: #{c.to_i}", log)
     else
-      info("unknown escape sequence: #{c.to_i}", log)
-      info("exit 1", log)
+      warn("unknown escape sequence: #{c.to_i}", log)
+      warn("exit 1", log)
       exit 1
     end
   end
@@ -318,8 +334,9 @@ class Terminal
   def run(file, passthrough=true, log=nil)
     begin
       while file.eof? == false
-        info("run loop", log)
+        debug("run loop", log)
         char = file.getc
+        debug("file char: #{char.unpack('c*')[0]}", log)
         info("char: #{char.unpack('c*')}", log)
         if char.ord == 27
           read_escape_sequence(file, passthrough, log)
@@ -328,10 +345,12 @@ class Terminal
           @col = 1
           STDOUT.puts if passthrough
         elsif char.ord == 27
-          # escape
+          warn("escape", log)
         elsif char.ord == 13
           @col = 1
           STDOUT.print "\r" if passthrough
+        elsif char.ord == 10
+          @row += 1
         else
           STDOUT.write char if passthrough
           info("set buffer row: #{@row} col: #{@col} «#{char}»", log)
@@ -344,8 +363,11 @@ class Terminal
         end
       end
       info("end of file", log)
-    rescue e
+    rescue => e
       info("error: #{e}", log)
+      e.backtrace.each do |l|
+        info("error: #{l}", log)
+      end
     end
   end
 
@@ -474,6 +496,7 @@ if options.key?(:spawn)
     t.run(stdout_stderr, options[:passthrough], options[:log])
   end
 else
+  STDIN.set_encoding("UTF-8")
   t.run(STDIN, options[:passthrough], options[:log])
 end 
 puts t.to_s if options[:final]

@@ -4,7 +4,7 @@ ANIMATION_WIDTH=40
 ANIMATION_HEIGHT=12
 up="$(echo '\x1b')[A"
 down="$(echo '\x1b')[B"
-/bin/rm -f _screenshot/*
+/bin/rm -rf _screenshot
 FSH_COLUMNS=${ANIMATION_WIDTH} \
   FSH_LINES=${ANIMATION_HEIGHT} \
   FSH_TEST_INPUT="tes$up$up$up" \
